@@ -26,7 +26,7 @@ import urllib.request
 from pathlib import Path
 
 ENDPOINT = "https://models.github.ai/inference/chat/completions"
-DEFAULT_MODEL = "openai/gpt-4o-mini"
+DEFAULT_MODEL = "openai/gpt-4o"
 COMMENT_MARKER = "<!-- crystal-format-check -->"
 
 
@@ -59,13 +59,69 @@ def fetch_artifact(repo: str, number: int, kind: str) -> dict:
     return payload if isinstance(payload, dict) else {}
 
 
+def deterministic_precheck(artifact: dict, kind: str) -> dict:
+    """Run mechanical checks before sending to the LLM. Returns a dict the LLM
+    can trust as ground truth."""
+    import re
+    title = (artifact.get("title") or "").strip()
+    label_names = {item.get("name") for item in (artifact.get("labels") or []) if isinstance(item, dict)}
+
+    cc_re = re.compile(
+        r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
+        r"(!)?(?:\(([a-z0-9._-]+)\))?: (.+)$"
+    )
+    epic_re = re.compile(r"^\[EPIC\] .+$")
+
+    is_epic = epic_re.match(title) is not None
+    cc_match = cc_re.match(title)
+
+    title_format_valid = bool(cc_match) or is_epic
+    title_type = cc_match.group(1) if cc_match else ("epic" if is_epic else None)
+    title_subject = cc_match.group(4) if cc_match else (title.removeprefix("[EPIC] ") if is_epic else title)
+
+    subject_len_ok = len(title_subject or "") <= (80 if kind == "issue" else 72)
+    subject_no_trailing_period = not (title_subject or "").endswith(".")
+
+    priority_labels = sorted(n for n in label_names if n.startswith("priority:p"))
+    type_labels = sorted(n for n in label_names if n.startswith("type:"))
+    has_one_priority = len(priority_labels) == 1
+    has_one_type = len(type_labels) == 1
+
+    type_label_matches_title = False
+    if has_one_type and title_type:
+        type_label_matches_title = type_labels[0] == f"type:{title_type}"
+
+    return {
+        "title": title,
+        "title_format_valid": title_format_valid,
+        "title_type": title_type,
+        "title_subject": title_subject,
+        "subject_len_ok": subject_len_ok,
+        "subject_no_trailing_period": subject_no_trailing_period,
+        "priority_labels": priority_labels,
+        "type_labels": type_labels,
+        "has_one_priority": has_one_priority,
+        "has_one_type": has_one_type,
+        "type_label_matches_title": type_label_matches_title,
+        "all_labels": sorted(label_names),
+    }
+
+
 def build_prompts(governance: dict[str, str], artifact: dict, kind: str, repo: str) -> tuple[str, str]:
+    precheck = deterministic_precheck(artifact, kind)
     system = (
-        "You are Crystal Governance Validator, a strict linter for GitHub artifacts in the Crystal team. "
-        "You receive a Crystal PR or issue and the canonical conventions. "
-        "Validate against the conventions and return ONLY a JSON object matching the schema below. "
-        "Do not include any prose outside the JSON.\n\n"
-        "Schema:\n"
+        "You are Crystal Governance Validator, a qualitative reviewer for GitHub artifacts in the Crystal team. "
+        "You receive (a) the canonical conventions, (b) the artifact, and (c) a deterministic mechanical pre-check that has ALREADY validated title format, label presence, type matching, and subject length. "
+        "TRUST THE PRE-CHECK as ground truth: do not re-validate items the pre-check has marked valid. Do not contradict the pre-check.\n\n"
+        "Your job is to add QUALITATIVE findings that the deterministic check cannot catch:\n"
+        "- Body completeness: issues should have Context, Acceptance criteria, Out of scope sections.\n"
+        "- Markdown checklist for sub-issues (`- [ ] #N`) — warn, prefer GitHub native sub-issues.\n"
+        "- Manual setting of kernel-projected labels (crystal:agent|stage|status|runtime|mission|parent|child:*) when the author is human (warn).\n"
+        "- Subject style: imperative present mood, ambiguous wording, jargon mismatch with body.\n"
+        "- Body inconsistencies (acceptance criteria vague, no measurable conditions, contradictions).\n"
+        "- Wrong scope choice when a more specific scope exists.\n\n"
+        "If the pre-check flagged any 'fail', echo those as findings WITHOUT re-checking. If pre-check is clean, focus only on qualitative findings (which may be 'ok' or 'warn').\n\n"
+        "Return ONLY a JSON object matching this schema. Do not include prose outside the JSON.\n"
         "{\n"
         '  "pass": boolean,\n'
         '  "severity": "ok" | "warn" | "fail",\n'
@@ -74,26 +130,36 @@ def build_prompts(governance: dict[str, str], artifact: dict, kind: str, repo: s
         '    {"rule": "string", "severity": "ok|warn|fail", "message": "string", "remediation": "string|null"}\n'
         "  ]\n"
         "}\n\n"
-        "Rules to check:\n"
-        "1. Title format: Conventional Commits `<type>(<scope>)?: <subject>` for PRs; "
-        "`<type>: <subject>` for issues; `[EPIC] <subject>` for epics.\n"
-        "2. Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.\n"
-        "3. Subject ≤ 72 chars (PR) or ≤ 80 chars (issue), imperative present, lowercase first letter, no trailing period.\n"
-        "4. Scope (when present in PR title) must belong to scopes.yaml entry for the repo (or universal_scopes).\n"
-        "5. Labels must include exactly one priority:p* (p0|p1|p2|p3) AND one type:* matching the title type.\n"
-        "6. Labels crystal:agent|stage|status|runtime|mission|parent|child:* are kernel-projected and must NOT be set manually unless author is paperclip-bot.\n"
-        "7. Body should have sections (issues only): Context, Acceptance criteria, Out of scope. Missing => warn.\n"
-        "8. Discourage Markdown checklists like `- [ ] #N` for sub-issues — should use GitHub native sub-issues. Warn if detected.\n\n"
         "Severity policy:\n"
-        "- 'fail' for clear violations (broken Conventional Commits format, wrong type, missing required label).\n"
-        "- 'warn' for missing optional sections, soft hints, deprecations.\n"
-        "- 'ok' overall when no fail and no warn; pass=true.\n"
-        "- pass=false if any 'fail' finding exists, otherwise pass=true.\n"
+        "- pass=false ONLY if the pre-check has fail conditions; otherwise pass=true.\n"
+        "- severity overall: 'ok' if no warn/fail, 'warn' if warn but no fail, 'fail' if any fail.\n"
     )
+    pre_fail_summary = []
+    if not precheck["title_format_valid"]:
+        pre_fail_summary.append({"rule": "Title format", "severity": "fail",
+                                 "message": f"Title '{precheck['title']}' is not Conventional Commits or [EPIC] format."})
+    if not precheck["has_one_priority"]:
+        pre_fail_summary.append({"rule": "Required label", "severity": "fail",
+                                 "message": f"Expected exactly one priority:p* label, got {precheck['priority_labels']}."})
+    if not precheck["has_one_type"]:
+        pre_fail_summary.append({"rule": "Required label", "severity": "fail",
+                                 "message": f"Expected exactly one type:* label, got {precheck['type_labels']}."})
+    if precheck["has_one_type"] and not precheck["type_label_matches_title"] and precheck["title_type"]:
+        pre_fail_summary.append({"rule": "Type/title mismatch", "severity": "fail",
+                                 "message": f"Title type '{precheck['title_type']}' but label is {precheck['type_labels']}."})
+    if not precheck["subject_len_ok"]:
+        pre_fail_summary.append({"rule": "Subject length", "severity": "warn",
+                                 "message": f"Subject is {len(precheck['title_subject'] or '')} chars, exceeds limit."})
+    if not precheck["subject_no_trailing_period"]:
+        pre_fail_summary.append({"rule": "Subject style", "severity": "warn",
+                                 "message": "Subject ends with a period, drop it."})
+
     user = (
         f"Repository: {repo}\n"
         f"Artifact kind: {kind}\n\n"
-        f"=== labels.yaml (canonical, excerpt of categories) ===\n{governance['labels_yaml']}\n\n"
+        f"=== Deterministic pre-check (TRUST THIS) ===\n{json.dumps(precheck, indent=2)}\n\n"
+        f"=== Pre-check failures (echo these in findings) ===\n{json.dumps(pre_fail_summary, indent=2) if pre_fail_summary else 'none'}\n\n"
+        f"=== labels.yaml (canonical, for context only) ===\n{governance['labels_yaml']}\n\n"
         f"=== scopes.yaml ===\n{governance['scopes_yaml']}\n\n"
         f"=== artifact ===\n{json.dumps(artifact, indent=2)}\n"
     )
