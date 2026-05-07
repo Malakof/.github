@@ -140,6 +140,10 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
+    # Configure git to use gh's token for HTTPS pushes (no-op locally if already set).
+    if not args.dry_run:
+        subprocess.run(["gh", "auth", "setup-git"], check=False)
+
     exclude_suffixes = [s.strip() for s in args.exclude_suffix.split(",") if s.strip()]
     repos = list_target_repos(args.org, args.include_prefix, exclude_suffixes)
     summary = []
