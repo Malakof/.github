@@ -104,6 +104,14 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
                 encoding="utf-8",
             )
         subprocess.run(["git", "checkout", "-b", branch], cwd=cwd, check=True)
+        subprocess.run(
+            ["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"],
+            cwd=cwd, check=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "github-actions[bot]"],
+            cwd=cwd, check=True,
+        )
         subprocess.run(["git", "add", PIN_FILENAME], cwd=cwd, check=True)
         subprocess.run(
             ["git", "commit", "-m", f"chore: bump governance to {new_version}"],
