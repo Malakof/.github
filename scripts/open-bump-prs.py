@@ -121,6 +121,8 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
         subprocess.run(
             [
                 "gh", "pr", "create",
+                "--repo", repo,
+                "--head", branch,
                 "--title", f"chore: bump governance to {new_version}",
                 "--body", f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}`.\n\nReleased from Malakof/.github.",
                 "--label", "type:chore",
