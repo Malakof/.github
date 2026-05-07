@@ -118,27 +118,41 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             cwd=cwd, check=True,
         )
         subprocess.run(["git", "push", "-u", "origin", branch], cwd=cwd, check=True)
-        subprocess.run(
-            [
-                "gh", "pr", "create",
-                "--repo", repo,
-                "--head", branch,
-                "--title", f"chore: bump governance to {new_version}",
-                "--body", f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}`.\n\nReleased from Malakof/.github.",
-                "--label", "type:chore",
-                "--label", "priority:p2",
-            ],
-            cwd=cwd, check=True,
-        )
+        # Create PR; labels are best-effort (the target repo may not have them yet).
+        pr_args = [
+            "gh", "pr", "create",
+            "--repo", repo,
+            "--head", branch,
+            "--title", f"chore: bump governance to {new_version}",
+            "--body", f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}`.\n\nReleased from Malakof/.github.",
+        ]
+        result = subprocess.run(pr_args + ["--label", "type:chore", "--label", "priority:p2"],
+                                cwd=cwd, capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            # Retry without labels (target repo may not have them).
+            result = subprocess.run(pr_args, cwd=cwd, capture_output=True, text=True, check=True)
     return {"repo": repo, "action": "opened", "branch": branch}
+
+
+DEFAULT_REPOS = [
+    "Malakof/crystal-dark-factory-poc",
+    "Malakof/crystal-dark-factory-target-lab",
+    "Malakof/crystal-discord-bot",
+    "Malakof/crystal-specs",
+    "Malakof/crystal-assistant-ui-poc",
+    "Malakof/crystal-company",
+]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--new-version", required=True)
     parser.add_argument("--org", default="Malakof")
-    parser.add_argument("--include-prefix", default="crystal-")
-    parser.add_argument("--exclude-suffix", default="-test,-scratch")
+    parser.add_argument("--repos", default=",".join(DEFAULT_REPOS),
+                        help="Comma-separated explicit list. Defaults to the 6 Crystal governed repos.")
+    parser.add_argument("--include-prefix", default=None,
+                        help="Optional glob prefix override (legacy mode).")
+    parser.add_argument("--exclude-suffix", default="-test,-scratch,-compta")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -146,16 +160,29 @@ def main() -> int:
     if not args.dry_run:
         subprocess.run(["gh", "auth", "setup-git"], check=False)
 
-    exclude_suffixes = [s.strip() for s in args.exclude_suffix.split(",") if s.strip()]
-    repos = list_target_repos(args.org, args.include_prefix, exclude_suffixes)
+    if args.include_prefix:
+        exclude_suffixes = [s.strip() for s in args.exclude_suffix.split(",") if s.strip()]
+        repos = list_target_repos(args.org, args.include_prefix, exclude_suffixes)
+    else:
+        repos = [r.strip() for r in args.repos.split(",") if r.strip()]
+
     summary = []
     for repo in repos:
-        current_pin = fetch_pin(repo)
-        if not is_outdated(current_pin, args.new_version):
-            summary.append({"repo": repo, "action": "skipped", "current": current_pin})
-            continue
-        summary.append(open_bump_pr(repo, args.new_version, args.dry_run))
+        try:
+            current_pin = fetch_pin(repo)
+            if not is_outdated(current_pin, args.new_version):
+                summary.append({"repo": repo, "action": "skipped", "current": current_pin})
+                continue
+            summary.append(open_bump_pr(repo, args.new_version, args.dry_run))
+        except subprocess.CalledProcessError as exc:
+            summary.append({
+                "repo": repo,
+                "action": "error",
+                "command": " ".join(exc.cmd) if exc.cmd else "?",
+                "stderr": (exc.stderr or "")[:200] if isinstance(exc.stderr, str) else "",
+            })
     print(json.dumps(summary, indent=2))
+    # Exit 0 even on per-repo errors — telemetry is in summary.
     return 0
 
 
