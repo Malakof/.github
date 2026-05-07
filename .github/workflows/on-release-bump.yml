@@ -40,4 +40,4 @@ jobs:
             --new-version "$NEW_VERSION" \
             --org Malakof \
             --include-prefix crystal- \
-            --exclude-suffix -test,-scratch
+            "--exclude-suffix=-test,-scratch"
