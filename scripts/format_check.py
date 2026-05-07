@@ -26,7 +26,7 @@ import urllib.request
 from pathlib import Path
 
 ENDPOINT = "https://models.github.ai/inference/chat/completions"
-DEFAULT_MODEL = "openai/gpt-4o"
+DEFAULT_MODEL = "openai/gpt-4o-mini"
 COMMENT_MARKER = "<!-- crystal-format-check -->"
 
 
