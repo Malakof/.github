@@ -1,0 +1,62 @@
+name: "Bug — anomalie à corriger"
+description: "Comportement incorrect, régression, erreur."
+title: "fix: "
+labels:
+  - "type:bug"
+  - "status:triage"
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Quel est le problème observé ? Quel est l'impact ?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Étapes minimales pour reproduire.
+      placeholder: |
+        1. ...
+        2. ...
+        3. Comportement observé : ...
+        4. Comportement attendu : ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Version, OS, runtime, branche, SHA.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Conditions pour considérer le bug corrigé.
+      placeholder: |
+        - [ ] Reproduction ne déclenche plus le bug
+        - [ ] Test de régression ajouté
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Logs, screenshots, traces, issues liées.
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "p0 — production cassée / data corrompue"
+        - "p1 — fonctionnalité importante dégradée"
+        - "p2 — gêne utilisateur"
+        - "p3 — cosmétique"
+      default: 1
+    validations:
+      required: true

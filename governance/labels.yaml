@@ -1,0 +1,414 @@
+# Crystal GitHub labels — taxonomie canonique harmonisée
+#
+# Source de vérité : Malakof/.github (à créer)
+# Schéma : crystal-labels/v1
+# Chaque repo Crystal applique cette taxonomie via scripts/sync-labels.py.
+#
+# Conventions :
+#   - lowercase, kebab-case, namespaces séparés par `:`
+#   - max 2 niveaux de namespace (ex: `crystal:agent:ceo`)
+#   - couleurs hex sans `#`, palette Crystal cohérente
+#   - `applies_to` = liste des repos OU "all" OU "crystal-*" (glob)
+#   - `emitted_by` = human | kernel | dark-factory | ci  (qui peut poser le label)
+#   - `required` = bool (un label de cette catégorie obligatoire sur chaque issue/PR)
+
+schema: crystal-labels/v1
+version: 1.0.0
+
+# =============================================================================
+# 1. UNIVERSELS — applicables à TOUS les repos Crystal, obligatoires
+# =============================================================================
+
+categories:
+
+  priority:
+    description: "Priorité d'exécution. Une et une seule par issue/PR."
+    required: true
+    applies_to: all
+    emitted_by: [human, dark-factory]
+    labels:
+      - name: priority:p0
+        color: b60205
+        description: "Doit être livré pour le milestone courant. Bloquant."
+      - name: priority:p1
+        color: fbca04
+        description: "Important, à livrer si pas de blocage P0."
+      - name: priority:p2
+        color: 0e8a16
+        description: "Souhaitable, post-milestone."
+      - name: priority:p3
+        color: 0b6e1f
+        description: "Backlog long terme, pas de date prévue."
+
+  type:
+    description: "Nature du livrable. Une et une seule par issue/PR."
+    required: true
+    applies_to: all
+    emitted_by: [human, dark-factory]
+    labels:
+      - name: type:epic
+        color: 6f42c1
+        description: "Issue parente regroupant des sub-issues. Lien EPIC↔enfants via sub-issues GitHub natives."
+      - name: type:feature
+        color: 1d76db
+        description: "Nouvelle fonctionnalité ou implémentation."
+      - name: type:bug
+        color: d73a4a
+        description: "Anomalie à corriger."
+      - name: type:chore
+        color: cfd3d7
+        description: "Maintenance, deps, outillage, sans changement fonctionnel."
+      - name: type:docs
+        color: 0075ca
+        description: "Documentation, ADR, PRD, README."
+      - name: type:refactor
+        color: a2eeef
+        description: "Réorganisation interne sans changement de comportement."
+      - name: type:spike
+        color: f9d0c4
+        description: "Investigation timeboxée, livrable = note + décision."
+      - name: type:test
+        color: 1d76db
+        description: "Couverture de test, contrats de validation."
+
+  status:
+    description: "État de progression côté backlog. Sert l'overlay Projects v2."
+    required: false
+    applies_to: all
+    emitted_by: [human, kernel, dark-factory]
+    labels:
+      - name: status:triage
+        color: D4C5F9
+        description: "À évaluer avant prise en charge."
+      - name: status:ready
+        color: 0e8a16
+        description: "Définition prête, peut être pris."
+      - name: status:in-progress
+        color: 1f6feb
+        description: "Travail en cours."
+      - name: status:blocked
+        color: d1242f
+        description: "Bloqué — dépendance externe, décision en attente."
+      - name: status:needs-human
+        color: f9d0c4
+        description: "HITL requis."
+
+# =============================================================================
+# 2. KERNEL — projetés automatiquement par paperclip kernel (lecture seule humain)
+# =============================================================================
+
+  crystal_kernel_agent:
+    description: "Lane d'agent assignée par le kernel. Ne pas modifier manuellement."
+    required: false
+    applies_to: [crystal-company, crystal-assistant-ui-poc]
+    emitted_by: [kernel]
+    labels:
+      - name: crystal:agent:ceo
+        color: d4c5f9
+        description: "Mission portée par l'agent CEO."
+      - name: crystal:agent:cto
+        color: d4c5f9
+        description: "Mission portée par l'agent CTO."
+      - name: crystal:agent:spec-lead
+        color: d4c5f9
+        description: "Mission portée par le spec-lead."
+      - name: crystal:agent:feature-implementer
+        color: d4c5f9
+        description: "Implémenteur de feature."
+      - name: crystal:agent:reviewer
+        color: d4c5f9
+        description: "Reviewer."
+      - name: crystal:agent:validator
+        color: d4c5f9
+        description: "Validator."
+      - name: crystal:agent:ui-debugger
+        color: d4c5f9
+        description: "UI debugger."
+      - name: crystal:agent:api-debugger
+        color: d4c5f9
+        description: "API debugger."
+
+  crystal_kernel_stage:
+    description: "Stage canonique de la mission. Projeté par kernel."
+    required: false
+    applies_to: [crystal-company, crystal-assistant-ui-poc]
+    emitted_by: [kernel]
+    labels:
+      - name: crystal:stage:prepare
+        color: bfd4f2
+        description: "Préparation."
+      - name: crystal:stage:spec-contract
+        color: bfd4f2
+        description: "Contrat de spec en cours."
+      - name: crystal:stage:implement
+        color: bfd4f2
+        description: "Implémentation."
+      - name: crystal:stage:review
+        color: bfd4f2
+        description: "Revue."
+      - name: crystal:stage:ship
+        color: bfd4f2
+        description: "Livraison."
+
+  crystal_kernel_status:
+    description: "État runtime projeté par le kernel."
+    required: false
+    applies_to: [crystal-company, crystal-assistant-ui-poc]
+    emitted_by: [kernel]
+    labels:
+      - name: crystal:status:todo
+        color: 6e7781
+        description: "En attente d'exécution."
+      - name: crystal:status:running
+        color: 1f6feb
+        description: "En cours d'exécution par un runtime."
+      - name: crystal:status:blocked
+        color: d1242f
+        description: "Bloqué par un évènement runtime."
+      - name: crystal:status:done
+        color: 0e8a16
+        description: "Terminé."
+      - name: crystal:status:needs-human
+        color: f9d0c4
+        description: "HITL requis par le kernel."
+
+  crystal_kernel_runtime:
+    description: "Runtime exécutant la mission."
+    required: false
+    applies_to: [crystal-company, crystal-assistant-ui-poc]
+    emitted_by: [kernel]
+    labels:
+      - name: crystal:runtime:codex
+        color: bfdadc
+        description: "Lane Codex."
+      - name: crystal:runtime:claude
+        color: bfdadc
+        description: "Lane Claude."
+      - name: crystal:runtime:openhands
+        color: bfdadc
+        description: "Lane OpenHands."
+
+  crystal_kernel_topology:
+    description: "Topologie issue-mission projetée par le kernel."
+    required: false
+    applies_to: [crystal-company, crystal-assistant-ui-poc]
+    emitted_by: [kernel]
+    labels:
+      - name: crystal:mission
+        color: 5319e7
+        description: "Mission projetée par le kernel."
+      - name: crystal:parent
+        color: 0e8a16
+        description: "Issue parente d'orchestration."
+      - name: crystal:child
+        color: 1d76db
+        description: "Stage enfant d'une mission."
+
+# =============================================================================
+# 3. INTAKE — flux d'entrée backlog/dark-factory
+# =============================================================================
+
+  intake:
+    description: "État d'ingestion d'une issue par la dark factory."
+    required: false
+    applies_to: all
+    emitted_by: [human, dark-factory]
+    labels:
+      - name: crystal:backlog
+        color: 0366d6
+        description: "Issue planifiée dans le backlog Crystal."
+      - name: crystal:intake
+        color: 1f6feb
+        description: "Candidate pour ingestion en mission."
+
+  mission_lifecycle:
+    description: "État d'une mission importée."
+    required: false
+    applies_to: all
+    emitted_by: [dark-factory, kernel]
+    labels:
+      - name: mission:not-imported
+        color: cfd3d7
+        description: "Pas encore importée comme mission Crystal."
+      - name: mission:imported
+        color: 5319e7
+        description: "Importée dans une mission Crystal."
+      - name: mission:in-progress
+        color: 1f6feb
+        description: "Mission en cours."
+      - name: mission:needs-human
+        color: f9d0c4
+        description: "Mission en attente d'arbitrage humain."
+      - name: mission:done
+        color: 0e8a16
+        description: "Mission terminée."
+
+# =============================================================================
+# 4. RELEASE — milestones de livraison (forme libre `release:<milestone>`)
+# =============================================================================
+
+  release:
+    description: "Marque l'appartenance à un milestone de release."
+    required: false
+    applies_to: all
+    emitted_by: [human]
+    naming: "release:<milestone-kebab>"
+    labels:
+      - name: release:rc1
+        color: 5319e7
+        description: "v1.0-rc1 cut requirement."
+      - name: release:final
+        color: 8B5CF6
+        description: "v1.0-final tag requirement."
+      - name: release:v1.x
+        color: C5DEF5
+        description: "Post-v1.0-final, scope v1.x."
+      - name: release:v2.0
+        color: BFD4F2
+        description: "Scope v2.0 par roadmap."
+    # Les nouveaux release:<milestone> peuvent être ajoutés sans amender labels.yaml,
+    # mais doivent suivre le format `release:<kebab>` pour passer governance-check.
+
+# =============================================================================
+# 5. REPO-SPECIFIC — appliqués uniquement à certains repos
+# =============================================================================
+
+  stream:
+    description: "Codenames Crystal pour les streams de travail. Réservés aux repos dark-factory."
+    required: false
+    applies_to: [crystal-dark-factory-poc, crystal-dark-factory-target-lab]
+    emitted_by: [human]
+    labels:
+      - name: stream:atlas
+        color: 1D76DB
+        description: "Stream A — operator contracts."
+      - name: stream:beacon
+        color: D93F0B
+        description: "Stream C — Discord brain migration."
+      - name: stream:forge
+        color: 0E8A16
+        description: "Stream B — durable spine + abstractions."
+      - name: stream:compass
+        color: FBCA04
+        description: "Stream D — cost ledger + onboarding."
+
+  scenario:
+    description: "Scénarios de validation lab. Réservé à target-lab."
+    required: false
+    applies_to: [crystal-dark-factory-target-lab]
+    emitted_by: [human, dark-factory]
+    labels:
+      - name: scenario:happy-path
+        color: 0e8a16
+        description: "Happy-path validation scenario."
+      - name: scenario:forbidden-path
+        color: b60205
+        description: "Forbidden write boundary scenario."
+      - name: scenario:hitl
+        color: f9d0c4
+        description: "Human-in-the-loop scenario."
+      - name: scenario:validation-fail
+        color: d73a4a
+        description: "Expected validation failure scenario."
+      - name: scenario:evidence
+        color: 6f42c1
+        description: "Evidence publication scenario."
+
+  area:
+    description: "Domaine fonctionnel. Forme libre `area:<domain-kebab>`."
+    required: false
+    applies_to: all
+    emitted_by: [human]
+    naming: "area:<domain-kebab>"
+    labels:
+      - name: area:ui
+        color: d4c5f9
+        description: "Surface UI."
+      - name: area:api
+        color: 0366d6
+        description: "Surface API/backend."
+      - name: area:cli
+        color: c2e0c6
+        description: "Surface CLI."
+      - name: area:docs
+        color: 0075ca
+        description: "Documentation."
+      - name: area:infra
+        color: 5319e7
+        description: "Infrastructure / déploiement."
+      - name: area:observability
+        color: fbca04
+        description: "Logs, traces, métriques."
+
+  agent:
+    description: "Lane d'agent suggérée pour l'implémentation (côté humain, distinct de crystal:agent:* projeté kernel)."
+    required: false
+    applies_to: [crystal-assistant-ui-poc]
+    emitted_by: [human]
+    labels:
+      - name: agent:ui
+        color: 0366d6
+        description: "Lane UI."
+      - name: agent:api
+        color: 1f6feb
+        description: "Lane API."
+
+# =============================================================================
+# 6. SIGNAUX PROCESS — métadonnées orthogonales
+# =============================================================================
+
+  process:
+    description: "Métadonnées process orthogonales aux autres dimensions."
+    required: false
+    applies_to: all
+    emitted_by: [human, ci, dark-factory]
+    labels:
+      - name: needs-triage
+        color: D4C5F9
+        description: "Issue ou PR en attente de triage product/impl."
+      - name: tdd
+        color: 0e8a16
+        description: "Test-driven development tracer bullet."
+      - name: testing
+        color: 1d76db
+        description: "Couverture de test ou contrat de validation."
+      - name: target-lab
+        color: 5319e7
+        description: "Utilise le crystal-dark-factory-target-lab."
+      - name: commit-qa
+        color: 7B68EE
+        description: "Question Q&A automatique sur un commit (Discord bot)."
+      - name: priority:first
+        color: b60205
+        description: "Doit s'exécuter avant les phases d'implémentation. Marqueur d'ordonnancement, pas de priorité — coexiste avec priority:p*."
+
+# =============================================================================
+# 7. DÉFAUTS GITHUB — conservés tels quels (ne pas modifier)
+# =============================================================================
+
+  github_defaults:
+    description: "Labels GitHub par défaut. Conservés pour compatibilité écosystème."
+    required: false
+    applies_to: all
+    emitted_by: [human]
+    labels:
+      # Note : `bug`, `enhancement`, `documentation` sont SUPPRIMÉS par
+      # migrate-labels.py (remplacés respectivement par type:bug/feature/docs).
+      - name: duplicate
+        color: cfd3d7
+        description: "Issue ou PR dupliquée."
+      - name: good first issue
+        color: 7057ff
+        description: "Bonne pour les nouveaux contributeurs."
+      - name: help wanted
+        color: 008672
+        description: "Aide bienvenue."
+      - name: invalid
+        color: e4e669
+        description: "Pas valide."
+      - name: question
+        color: d876e3
+        description: "Demande d'information."
+      - name: wontfix
+        color: ffffff
+        description: "Ne sera pas corrigé."

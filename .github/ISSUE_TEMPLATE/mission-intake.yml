@@ -1,0 +1,80 @@
+name: "Mission intake — candidate dark factory"
+description: "Issue candidate pour ingestion comme mission Crystal par la dark factory."
+title: "intake: "
+labels:
+  - "crystal:intake"
+  - "mission:not-imported"
+  - "status:triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ce template crée une issue candidate à l'ingestion par la dark factory. Elle sera transformée en mission Crystal lors du prochain `dark-factory epic-plan` ou import manuel.
+
+        Voir [governance/README.md §3.1](https://github.com/Malakof/.github/blob/main/governance/README.md#31-mission-codes) pour les conventions de mission codes.
+  - type: input
+    id: mission_code
+    attributes:
+      label: Mission code (proposé)
+      description: "Format `<REPO_PREFIX>-<TYPE>-<NUM>`. Laisse vide si non alloué — la dark factory ou un mainteneur l'attribuera."
+      placeholder: "PAUI-FEAT-042"
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Pourquoi cette mission. Problème ou besoin.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Ce qui doit être livré.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: validation_contract
+    attributes:
+      label: Validation contract (optionnel)
+      description: Si déjà défini ou un draft. Sinon laissé au spec-lead.
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "p0"
+        - "p1"
+        - "p2"
+        - "p3"
+      default: 2
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime_preference
+    attributes:
+      label: Runtime préférence (optionnel)
+      description: "Lane suggérée — la kernel peut réassigner."
+      options:
+        - "no preference"
+        - "claude"
+        - "codex"
+        - "openhands"
+      default: 0
+    validations:
+      required: false

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Crystal governance — doc canonique"
+    url: "https://github.com/Malakof/.github/blob/main/governance/README.md"
+    about: "Conventions Crystal (labels, commits, naming, EPIC workflow)."
+  - name: "Crystal labels canoniques"
+    url: "https://github.com/Malakof/.github/blob/main/governance/labels.yaml"
+    about: "Table canonique des labels et leur sémantique."

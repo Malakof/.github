@@ -1,0 +1,93 @@
+# Conventional Commits — scopes autorisés par repo
+#
+# Lu par .github/workflows/enforce-conventions.yml pour valider les titres PR.
+# Les scopes sont optionnels mais doivent appartenir à la liste si présents.
+#
+# Format de titre validé : <type>(<scope>)?: <subject>
+# Si scope absent → toléré.
+# Si scope présent → doit appartenir à `scopes[<repo>]`.
+
+schema: crystal-scopes/v1
+version: 1.0.0
+
+scopes:
+
+  crystal-dark-factory-poc:
+    - dispatcher
+    - ingestion
+    - adapter
+    - profiles
+    - openhands
+    - sandbox
+    - evidence
+    - validation
+    - dark-factory
+    - operator
+    - cli
+    - docs
+    - tests
+
+  crystal-dark-factory-target-lab:
+    - scenarios
+    - hitl
+    - evidence
+    - adapter
+    - tests
+    - docs
+
+  crystal-discord-bot:
+    - bot
+    - commands
+    - intents
+    - corpus
+    - commit-qa
+    - weekly-digest
+    - infra
+    - tests
+    - docs
+
+  crystal-specs:
+    - ontologie
+    - specifications
+    - chains
+    - prompts
+    - integrations
+    - verticales
+    - docs
+
+  crystal-assistant-ui-poc:
+    - web
+    - mobile
+    - chat
+    - api
+    - mission
+    - validation
+    - tests
+    - docs
+
+  crystal-company:
+    - kernel
+    - harness
+    - adapters
+    - skills
+    - agents
+    - builders
+    - missions
+    - tests
+    - docs
+
+  Malakof/.github:
+    - labels
+    - templates
+    - workflows
+    - skills
+    - scripts
+    - governance
+    - docs
+
+# Scopes universels (acceptés sur n'importe quel repo)
+universal_scopes:
+  - deps
+  - ci
+  - release
+  - revert

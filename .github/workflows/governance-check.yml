@@ -1,0 +1,67 @@
+name: governance-check
+# Reusable workflow : valide que le repo cible est aligné avec sa version de gouvernance pin.
+# Appelé depuis chaque repo Crystal :
+#   on: [push, pull_request]
+#   jobs:
+#     governance:
+#       uses: Malakof/.github/.github/workflows/governance-check.yml@v1.0.0
+
+on:
+  workflow_call:
+    inputs:
+      strict:
+        description: "true = échec si labels divergent. false = warning."
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Validate pin file exists
+        run: |
+          if [ ! -f ".crystal-governance.yaml" ]; then
+            echo "::error::Missing .crystal-governance.yaml — see https://github.com/Malakof/.github/blob/main/governance/README.md#6-adoption-sur-un-nouveau-repo"
+            exit 1
+          fi
+
+      - name: Resolve pin version
+        id: pin
+        run: |
+          VERSION=$(yq '.governance_version' .crystal-governance.yaml)
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "::notice::Pin = ${VERSION}"
+
+      - name: Verify pin tag exists in Malakof/.github
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.pin.outputs.version }}"
+          if ! gh api repos/Malakof/.github/git/refs/tags/$VERSION >/dev/null 2>&1; then
+            echo "::error::Pin tag $VERSION does not exist in Malakof/.github"
+            exit 1
+          fi
+
+      - name: Checkout governance at pin
+        uses: actions/checkout@v4
+        with:
+          repository: Malakof/.github
+          path: .governance
+          ref: ${{ steps.pin.outputs.version }}
+
+      - name: Verify labels align with pin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .governance/scripts/sync-labels.py \
+            --repo "${{ github.repository }}" \
+            --labels-file .governance/governance/labels.yaml \
+            --check-only \
+            --strict "${{ inputs.strict }}"

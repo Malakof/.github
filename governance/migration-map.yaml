@@ -1,0 +1,143 @@
+# Crystal labels — migration map
+#
+# Lu par scripts/migrate-labels.py qui :
+#   1. parcourt chaque repo Crystal
+#   2. pour chaque issue/PR portant un label "from", ajoute le label "to" et retire "from"
+#   3. à la fin, supprime les labels "from" du repo (sauf si dans `keep_as_alias_until`)
+#
+# `keep_as_alias_until` : conserve le label legacy comme alias pendant N jours
+# avant suppression définitive — permet aux outils externes de migrer en douceur.
+
+schema: crystal-labels-migration/v1
+version: 1.0.0
+
+migrations:
+
+  # -------------------------------------------------------------------------
+  # Doublons de priorité — fusion priority:prio-* dans priority:p*
+  # -------------------------------------------------------------------------
+  - from: priority:prio-1
+    to: priority:p1
+    reason: "Doublon. priority:p* est canonique, priority:prio-* déprécié."
+    applies_to: [crystal-assistant-ui-poc]
+
+  - from: priority:prio-2
+    to: priority:p2
+    reason: "Doublon."
+    applies_to: [crystal-assistant-ui-poc]
+
+  - from: priority:prio-3
+    to: priority:p3
+    reason: "Doublon."
+    applies_to: [crystal-assistant-ui-poc]
+
+  # -------------------------------------------------------------------------
+  # Polaris → Crystal (déjà migré côté kernel paperclip, on nettoie le legacy)
+  # -------------------------------------------------------------------------
+  - from: polaris:agent:ceo
+    to: crystal:agent:ceo
+    reason: "Renommage namespace polaris → crystal acté côté paperclip kernel."
+    applies_to: [crystal-company]
+  - from: polaris:agent:cto
+    to: crystal:agent:cto
+    applies_to: [crystal-company]
+  - from: polaris:agent:spec-lead
+    to: crystal:agent:spec-lead
+    applies_to: [crystal-company]
+  - from: polaris:agent:feature-implementer
+    to: crystal:agent:feature-implementer
+    applies_to: [crystal-company]
+  - from: polaris:agent:reviewer
+    to: crystal:agent:reviewer
+    applies_to: [crystal-company]
+  - from: polaris:agent:validator
+    to: crystal:agent:validator
+    applies_to: [crystal-company]
+  - from: polaris:agent:ui-debugger
+    to: crystal:agent:ui-debugger
+    applies_to: [crystal-company]
+  - from: polaris:agent:api-debugger
+    to: crystal:agent:api-debugger
+    applies_to: [crystal-company]
+
+  - from: polaris:stage:prepare
+    to: crystal:stage:prepare
+    applies_to: [crystal-company]
+  - from: polaris:stage:spec-contract
+    to: crystal:stage:spec-contract
+    applies_to: [crystal-company]
+  - from: polaris:stage:implement
+    to: crystal:stage:implement
+    applies_to: [crystal-company]
+  - from: polaris:stage:review
+    to: crystal:stage:review
+    applies_to: [crystal-company]
+  - from: polaris:stage:ship
+    to: crystal:stage:ship
+    applies_to: [crystal-company]
+
+  - from: polaris:status:todo
+    to: crystal:status:todo
+    applies_to: [crystal-company]
+  - from: polaris:status:running
+    to: crystal:status:running
+    applies_to: [crystal-company]
+  - from: polaris:status:blocked
+    to: crystal:status:blocked
+    applies_to: [crystal-company]
+  - from: polaris:status:done
+    to: crystal:status:done
+    applies_to: [crystal-company]
+  - from: polaris:status:needs-human
+    to: crystal:status:needs-human
+    applies_to: [crystal-company]
+
+  - from: polaris:runtime:codex
+    to: crystal:runtime:codex
+    applies_to: [crystal-company]
+  - from: polaris:runtime:claude
+    to: crystal:runtime:claude
+    applies_to: [crystal-company]
+  - from: polaris:runtime:openhands
+    to: crystal:runtime:openhands
+    applies_to: [crystal-company]
+
+  - from: polaris:mission
+    to: crystal:mission
+    applies_to: [crystal-company]
+  - from: polaris:parent
+    to: crystal:parent
+    applies_to: [crystal-company]
+  - from: polaris:child
+    to: crystal:child
+    applies_to: [crystal-company]
+
+  # -------------------------------------------------------------------------
+  # Defaults GitHub dépréciés → équivalents Crystal (suppression immédiate)
+  # Note : `good first issue`, `help wanted`, `duplicate`, `invalid`,
+  # `question`, `wontfix` sont conservés tels quels.
+  # -------------------------------------------------------------------------
+  - from: bug
+    to: type:bug
+    reason: "Type Crystal canonique préfère namespace explicite."
+    applies_to: all
+
+  - from: enhancement
+    to: type:feature
+    reason: "Renommé vers type:feature."
+    applies_to: all
+
+  - from: documentation
+    to: type:docs
+    reason: "Renommé vers type:docs."
+    applies_to: all
+
+# -------------------------------------------------------------------------
+# Renames pures (pas de fusion, juste nouveau nom)
+# -------------------------------------------------------------------------
+renames: []
+
+# -------------------------------------------------------------------------
+# Suppressions — labels à retirer sans remplacement
+# -------------------------------------------------------------------------
+removals: []

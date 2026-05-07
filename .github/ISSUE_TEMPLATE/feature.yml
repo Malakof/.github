@@ -1,0 +1,56 @@
+name: "Feature — nouvelle fonctionnalité"
+description: "Demande ou proposition de nouvelle fonctionnalité."
+title: "feat: "
+labels:
+  - "type:feature"
+  - "status:triage"
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Pourquoi cette feature, problème utilisateur ou besoin technique.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Conditions de complétion mesurables.
+      placeholder: |
+        - [ ] Comportement attendu : ...
+        - [ ] Tests couvrent : ...
+        - [ ] Doc mise à jour : ...
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Comment vérifier que la feature fonctionne (tests, scénarios, evidence).
+    validations:
+      required: false
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - "p0"
+        - "p1"
+        - "p2"
+        - "p3"
+      default: 2
+    validations:
+      required: true

@@ -1,0 +1,60 @@
+name: enforce-conventions
+# Reusable workflow : valide titre PR (Conventional Commits) + labels obligatoires.
+# Appelé depuis chaque repo Crystal :
+#   on: [pull_request]
+#   jobs:
+#     enforce:
+#       uses: Malakof/.github/.github/workflows/enforce-conventions.yml@v1.0.0
+
+on:
+  workflow_call:
+    inputs:
+      blocking:
+        description: "true = échec bloquant, false = warning seul (mode grace period)"
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  enforce:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+    steps:
+      - name: Checkout governance source
+        uses: actions/checkout@v4
+        with:
+          repository: Malakof/.github
+          path: .governance
+          ref: main
+
+      - name: Resolve pin version
+        id: pin
+        run: |
+          if [ -f ".crystal-governance.yaml" ]; then
+            VERSION=$(yq '.governance_version' .crystal-governance.yaml)
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate PR title (Conventional Commits)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 .governance/scripts/validate_title.py \
+            --title "$PR_TITLE" \
+            --scopes-file .governance/governance/scopes.yaml \
+            --repo "${{ github.repository }}" \
+            --blocking "${{ inputs.blocking }}"
+
+      - name: Validate required labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 .governance/scripts/validate_labels.py \
+            --pr "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --labels-file .governance/governance/labels.yaml \
+            --blocking "${{ inputs.blocking }}"

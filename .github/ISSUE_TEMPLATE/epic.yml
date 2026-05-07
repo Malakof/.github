@@ -1,0 +1,73 @@
+name: "[EPIC] Parent issue regroupant des sub-issues"
+description: "Issue parente pour orchestrer plusieurs sub-issues. Crée les enfants comme sub-issues GitHub natives."
+title: "[EPIC] "
+labels:
+  - "type:epic"
+  - "status:triage"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Comment utiliser ce template
+
+        Une EPIC regroupe plusieurs livrables liés. Crée les enfants comme **sub-issues GitHub natives** (Add → Create sub-issue dans la sidebar) — pas en checklist Markdown. La dark factory ingère les sub-issues via l'API native.
+
+        Voir [governance/README.md §1.4](https://github.com/Malakof/.github/blob/main/governance/README.md#14-workflow-epic--sub-issues).
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Pourquoi cette EPIC, quel problème ou opportunité.
+      placeholder: "L'objectif de cette EPIC est de ..."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Conditions de complétion mesurables.
+      placeholder: |
+        - [ ] Toutes les sub-issues sont closes
+        - [ ] La validation X passe en CI
+        - [ ] La doc Y est à jour
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: Ce qui n'est PAS couvert par cette EPIC.
+      placeholder: "Cette EPIC ne traite pas ..."
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Comment vérifier que l'EPIC est livrée. Référence vers contrat de validation si applicable.
+    validations:
+      required: false
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: ADR, PRD, missions, issues liées.
+      placeholder: |
+        - ADR-XXXX
+        - PRD-XXXX
+        - Mission XXXX-FEAT-001
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Priorité d'exécution (un seul `priority:p*` sera appliqué).
+      options:
+        - "p0 — bloquant pour le milestone courant"
+        - "p1 — important, à livrer si pas de blocage P0"
+        - "p2 — souhaitable, post-milestone"
+        - "p3 — backlog long terme"
+      default: 2
+    validations:
+      required: true

@@ -1,0 +1,43 @@
+name: on-release-bump
+# Workflow interne au repo Malakof/.github.
+# Sur chaque tag semver vX.Y.Z, ouvre une PR "chore: bump governance to vX.Y.Z"
+# sur tous les repos Crystal qui pin une version antérieure.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  open-bump-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Skip if CRYSTAL_GITHUB_PAT secret is missing
+        id: precheck
+        env:
+          PAT_SET: ${{ secrets.CRYSTAL_GITHUB_PAT != '' }}
+        run: |
+          if [ "$PAT_SET" != "true" ]; then
+            echo "::notice::CRYSTAL_GITHUB_PAT not set — skipping bump PR generation. Configure the secret to enable cross-repo bump PRs."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open bump PRs across Crystal repos
+        if: steps.precheck.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CRYSTAL_GITHUB_PAT }}
+          NEW_VERSION: ${{ github.ref_name }}
+        run: |
+          python3 scripts/open-bump-prs.py \
+            --new-version "$NEW_VERSION" \
+            --org Malakof \
+            --include-prefix crystal- \
+            --exclude-suffix -test,-scratch
