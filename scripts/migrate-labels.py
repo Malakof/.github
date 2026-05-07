@@ -52,31 +52,47 @@ def issues_with_label(repo: str, label: str) -> list[dict[str, Any]]:
     )
 
 
-def add_label(repo: str, number: int, label: str, dry_run: bool) -> None:
+def _retry_gh(cmd: list[str], attempts: int = 3) -> tuple[int, str]:
+    """Run a gh command with simple retry on transient 5xx errors."""
+    import time
+    last_stderr = ""
+    for attempt in range(attempts):
+        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if result.returncode == 0:
+            return 0, ""
+        last_stderr = result.stderr.strip()
+        if "504" in last_stderr or "502" in last_stderr or "Timeout" in last_stderr:
+            time.sleep(1.5 * (attempt + 1))
+            continue
+        return result.returncode, last_stderr
+    return 1, last_stderr
+
+
+def add_label(repo: str, number: int, label: str, dry_run: bool) -> str:
     if dry_run:
-        return
-    subprocess.run(
-        ["gh", "issue", "edit", str(number), "--repo", repo, "--add-label", label],
-        check=True,
+        return "dry-run"
+    code, err = _retry_gh(
+        ["gh", "issue", "edit", str(number), "--repo", repo, "--add-label", label]
     )
+    return "ok" if code == 0 else f"add-failed:{err.splitlines()[0][:80] if err else ''}"
 
 
-def remove_label(repo: str, number: int, label: str, dry_run: bool) -> None:
+def remove_label(repo: str, number: int, label: str, dry_run: bool) -> str:
     if dry_run:
-        return
-    subprocess.run(
-        ["gh", "issue", "edit", str(number), "--repo", repo, "--remove-label", label],
-        check=True,
+        return "dry-run"
+    code, err = _retry_gh(
+        ["gh", "issue", "edit", str(number), "--repo", repo, "--remove-label", label]
     )
+    return "ok" if code == 0 else f"remove-failed:{err.splitlines()[0][:80] if err else ''}"
 
 
-def delete_label(repo: str, label: str, dry_run: bool) -> None:
+def delete_label(repo: str, label: str, dry_run: bool) -> str:
     if dry_run:
-        return
-    subprocess.run(
-        ["gh", "api", "--method", "DELETE", f"repos/{repo}/labels/{label}"],
-        check=False,
+        return "dry-run"
+    code, err = _retry_gh(
+        ["gh", "api", "--method", "DELETE", f"repos/{repo}/labels/{label}"]
     )
+    return "ok" if code == 0 else f"delete-failed:{err.splitlines()[0][:80] if err else ''}"
 
 
 def migrate_repo(repo: str, migrations: list[dict[str, Any]], dry_run: bool) -> dict[str, Any]:
@@ -98,12 +114,14 @@ def migrate_repo(repo: str, migrations: list[dict[str, Any]], dry_run: bool) -> 
                 "to": to_label,
                 "to_already_present": to_label in current_labels,
             })
+            add_status = "skipped"
             if to_label not in current_labels:
-                add_label(repo, item["number"], to_label, dry_run)
-            remove_label(repo, item["number"], from_label, dry_run)
+                add_status = add_label(repo, item["number"], to_label, dry_run)
+            remove_status = remove_label(repo, item["number"], from_label, dry_run)
+            actions[-1]["add_status"] = add_status
+            actions[-1]["remove_status"] = remove_status
         if items:
-            actions.append({"repo": repo, "delete_label": from_label})
-            delete_label(repo, from_label, dry_run)
+            actions.append({"repo": repo, "delete_label": from_label, "delete_status": delete_label(repo, from_label, dry_run)})
     return {"repo": repo, "actions": actions}
 
 

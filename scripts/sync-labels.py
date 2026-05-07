@@ -74,7 +74,7 @@ def upsert_label(repo: str, label: dict[str, str], dry_run: bool, existing: dict
             return "ok"
         if dry_run:
             return "would-update"
-        subprocess.run(
+        result = subprocess.run(
             [
                 "gh", "api", "--method", "PATCH",
                 f"repos/{repo}/labels/{name}",
@@ -82,12 +82,15 @@ def upsert_label(repo: str, label: dict[str, str], dry_run: bool, existing: dict
                 "-f", f"color={label['color']}",
                 "-f", f"description={label['description']}",
             ],
-            check=True,
+            capture_output=True, text=True, check=False,
         )
+        if result.returncode != 0:
+            stderr_first = result.stderr.strip().splitlines()[0] if result.stderr.strip() else ""
+            return f"update-failed:{stderr_first[:80]}"
         return "updated"
     if dry_run:
         return "would-create"
-    subprocess.run(
+    result = subprocess.run(
         [
             "gh", "api", "--method", "POST",
             f"repos/{repo}/labels",
@@ -95,8 +98,13 @@ def upsert_label(repo: str, label: dict[str, str], dry_run: bool, existing: dict
             "-f", f"color={label['color']}",
             "-f", f"description={label['description']}",
         ],
-        check=True,
+        capture_output=True, text=True, check=False,
     )
+    if result.returncode != 0:
+        if "Validation Failed" in result.stderr or "already_exists" in result.stderr:
+            return "exists-on-server"
+        stderr_first = result.stderr.strip().splitlines()[0] if result.stderr.strip() else ""
+        return f"create-failed:{stderr_first[:80]}"
     return "created"
 
 

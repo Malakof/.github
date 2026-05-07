@@ -380,7 +380,7 @@ categories:
         description: "Question Q&A automatique sur un commit (Discord bot)."
       - name: priority:first
         color: b60205
-        description: "Doit s'exécuter avant les phases d'implémentation. Marqueur d'ordonnancement, pas de priorité — coexiste avec priority:p*."
+        description: "Marqueur d'ordonnancement (s'exécute avant les phases d'implémentation). Coexiste avec priority:p*."
 
 # =============================================================================
 # 7. DÉFAUTS GITHUB — conservés tels quels (ne pas modifier)
