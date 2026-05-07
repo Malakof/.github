@@ -1,0 +1,93 @@
+name: format-check
+# Reusable workflow: validates that a PR or issue conforms to Crystal
+# governance via the GitHub Models LLM (gpt-4o-mini by default).
+# Posts a sticky comment with findings.
+#
+# Called from each Crystal repo:
+#   on:
+#     pull_request:
+#       types: [opened, edited, synchronize, reopened]
+#     issues:
+#       types: [opened, edited]
+#   jobs:
+#     check:
+#       uses: Malakof/.github/.github/workflows/format-check.yml@v1.2.0
+#       permissions:
+#         contents: read
+#         pull-requests: write
+#         issues: write
+#         models: read
+
+on:
+  workflow_call:
+    inputs:
+      blocking:
+        description: "true = fail the workflow when severity=fail; false = warning only."
+        required: false
+        default: false
+        type: boolean
+      model:
+        description: "GitHub Models model id (publisher/model). Default openai/gpt-4o-mini."
+        required: false
+        default: "openai/gpt-4o-mini"
+        type: string
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      models: read
+    steps:
+      - name: Checkout governance source at pin
+        uses: actions/checkout@v4
+        with:
+          repository: Malakof/.github
+          path: .governance
+          ref: ${{ github.event.repository.default_branch == 'main' && 'main' || 'main' }}
+
+      - name: Resolve governance pin
+        id: pin
+        run: |
+          if [ -f ".crystal-governance.yaml" ]; then
+            VERSION=$(grep '^governance_version:' .crystal-governance.yaml | sed 's/governance_version: *//' | tr -d '"' | xargs)
+            echo "version=${VERSION:-main}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=main" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Re-checkout governance at pin (if not main)
+        if: steps.pin.outputs.version != 'main'
+        uses: actions/checkout@v4
+        with:
+          repository: Malakof/.github
+          path: .governance
+          ref: ${{ steps.pin.outputs.version }}
+
+      - name: Run format check (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_MODELS_TOKEN: ${{ github.token }}
+        run: |
+          python3 .governance/scripts/format_check.py \
+            --repo "${{ github.repository }}" \
+            --pr "${{ github.event.pull_request.number }}" \
+            --governance-root .governance \
+            --model "${{ inputs.model }}" \
+            --blocking "${{ inputs.blocking }}"
+
+      - name: Run format check (issue)
+        if: github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_MODELS_TOKEN: ${{ github.token }}
+        run: |
+          python3 .governance/scripts/format_check.py \
+            --repo "${{ github.repository }}" \
+            --issue "${{ github.event.issue.number }}" \
+            --governance-root .governance \
+            --model "${{ inputs.model }}" \
+            --blocking "${{ inputs.blocking }}"

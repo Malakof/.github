@@ -268,6 +268,7 @@ inactivity.
 - `scopes.yaml` — Conventional Commits scopes per repo
 - `.github/ISSUE_TEMPLATE/` — issue templates
 - `.github/PULL_REQUEST_TEMPLATE.md` — PR template
-- `.github/workflows/enforce-conventions.yml` — title/labels validation
+- `.github/workflows/enforce-conventions.yml` — title/labels validation (deterministic)
 - `.github/workflows/governance-check.yml` — pin + skills check
+- `.github/workflows/format-check.yml` — LLM-driven validation via GitHub Models (gpt-4o-mini), posts sticky comment with findings
 - `skills/crystal-github-conventions/SKILL.md` — AI agents skill (universal Claude + Codex format, propagated to `.claude/skills/` and `.agents/skills/`)
