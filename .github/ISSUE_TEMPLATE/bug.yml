@@ -1,5 +1,5 @@
-name: "Bug — anomalie à corriger"
-description: "Comportement incorrect, régression, erreur."
+name: "Bug — anomaly to fix"
+description: "Incorrect behaviour, regression, error."
 title: "fix: "
 labels:
   - "type:bug"
@@ -9,43 +9,43 @@ body:
     id: context
     attributes:
       label: Context
-      description: Quel est le problème observé ? Quel est l'impact ?
+      description: What is the observed problem? What is the impact?
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
       label: Reproduction
-      description: Étapes minimales pour reproduire.
+      description: Minimal steps to reproduce.
       placeholder: |
         1. ...
         2. ...
-        3. Comportement observé : ...
-        4. Comportement attendu : ...
+        3. Observed behaviour: ...
+        4. Expected behaviour: ...
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: Version, OS, runtime, branche, SHA.
+      description: Version, OS, runtime, branch, SHA.
     validations:
       required: false
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: Conditions pour considérer le bug corrigé.
+      description: Conditions to consider the bug fixed.
       placeholder: |
-        - [ ] Reproduction ne déclenche plus le bug
-        - [ ] Test de régression ajouté
+        - [ ] Reproduction no longer triggers the bug
+        - [ ] Regression test added
     validations:
       required: true
   - type: textarea
     id: links
     attributes:
       label: Links
-      description: Logs, screenshots, traces, issues liées.
+      description: Logs, screenshots, traces, related issues.
     validations:
       required: false
   - type: dropdown
@@ -53,10 +53,10 @@ body:
     attributes:
       label: Priority
       options:
-        - "p0 — production cassée / data corrompue"
-        - "p1 — fonctionnalité importante dégradée"
-        - "p2 — gêne utilisateur"
-        - "p3 — cosmétique"
+        - "p0 — production broken / data corrupted"
+        - "p1 — important feature degraded"
+        - "p2 — user friction"
+        - "p3 — cosmetic"
       default: 1
     validations:
       required: true

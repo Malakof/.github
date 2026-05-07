@@ -1,7 +1,7 @@
 name: on-release-bump
-# Workflow interne au repo Malakof/.github.
-# Sur chaque tag semver vX.Y.Z, ouvre une PR "chore: bump governance to vX.Y.Z"
-# sur tous les repos Crystal qui pin une version antérieure.
+# Internal workflow for Malakof/.github.
+# On every semver tag vX.Y.Z, opens a "chore: bump governance to vX.Y.Z" PR
+# on every Crystal repo pinning an older version.
 
 on:
   push:

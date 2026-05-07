@@ -1,6 +1,6 @@
 name: governance-check
-# Reusable workflow : valide que le repo cible est aligné avec sa version de gouvernance pin.
-# Appelé depuis chaque repo Crystal :
+# Reusable workflow: validates that the target repo is aligned with its pinned governance version.
+# Called from each Crystal repo:
 #   on: [push, pull_request]
 #   jobs:
 #     governance:
@@ -10,7 +10,7 @@ on:
   workflow_call:
     inputs:
       strict:
-        description: "true = échec si labels divergent. false = warning."
+        description: "true = fail if labels diverge. false = warning."
         required: false
         default: false
         type: boolean
@@ -28,7 +28,7 @@ jobs:
       - name: Validate pin file exists
         run: |
           if [ ! -f ".crystal-governance.yaml" ]; then
-            echo "::error::Missing .crystal-governance.yaml — see https://github.com/Malakof/.github/blob/main/governance/README.md#6-adoption-sur-un-nouveau-repo"
+            echo "::error::Missing .crystal-governance.yaml — see https://github.com/Malakof/.github/blob/main/governance/README.md#6-adoption-on-a-new-repo"
             exit 1
           fi
 

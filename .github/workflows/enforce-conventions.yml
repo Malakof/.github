@@ -1,6 +1,6 @@
 name: enforce-conventions
-# Reusable workflow : valide titre PR (Conventional Commits) + labels obligatoires.
-# Appelé depuis chaque repo Crystal :
+# Reusable workflow: validates PR title (Conventional Commits) + required labels.
+# Called from each Crystal repo:
 #   on: [pull_request]
 #   jobs:
 #     enforce:
@@ -10,7 +10,7 @@ on:
   workflow_call:
     inputs:
       blocking:
-        description: "true = échec bloquant, false = warning seul (mode grace period)"
+        description: "true = blocking failure, false = warning only (grace period mode)"
         required: false
         default: true
         type: boolean

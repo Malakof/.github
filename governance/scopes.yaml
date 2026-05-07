@@ -1,11 +1,11 @@
-# Conventional Commits — scopes autorisés par repo
+# Conventional Commits — allowed scopes per repo
 #
-# Lu par .github/workflows/enforce-conventions.yml pour valider les titres PR.
-# Les scopes sont optionnels mais doivent appartenir à la liste si présents.
+# Read by .github/workflows/enforce-conventions.yml to validate PR titles.
+# Scopes are optional but must belong to the list when present.
 #
-# Format de titre validé : <type>(<scope>)?: <subject>
-# Si scope absent → toléré.
-# Si scope présent → doit appartenir à `scopes[<repo>]`.
+# Validated title format: <type>(<scope>)?: <subject>
+# If scope absent -> tolerated.
+# If scope present -> must belong to `scopes[<repo>]`.
 
 schema: crystal-scopes/v1
 version: 1.0.0
@@ -85,7 +85,7 @@ scopes:
     - governance
     - docs
 
-# Scopes universels (acceptés sur n'importe quel repo)
+# Universal scopes (accepted on any repo)
 universal_scopes:
   - deps
   - ci

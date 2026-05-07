@@ -1,6 +1,6 @@
 schema: crystal-governance-pin/v1
-governance_version: v1.0.0
+governance_version: v1.0.2
 source: Malakof/.github
-# Self-pin : Malakof/.github référence sa propre version courante.
-# Permet aux outils (sync, governance-check) de traiter ce repo comme
-# n'importe quel autre repo Crystal.
+# Self-pin: Malakof/.github references its own current version.
+# Lets tooling (sync, governance-check) treat this repo like any other
+# Crystal repo.

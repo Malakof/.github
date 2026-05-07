@@ -1,36 +1,34 @@
-# Crystal GitHub Governance — Doc canonique
+# Crystal GitHub Governance — Canonical Document
 
-Source de vérité unique pour toutes les conventions GitHub Crystal :
-labels, templates, naming, workflows. Hébergé dans `Malakof/.github`,
-versionné par tags semver, propagé aux repos cibles via pin file
-`.crystal-governance.yaml` et `crystal-company/builders/sync_repo_surface.py`.
+Single source of truth for all Crystal team GitHub conventions:
+labels, templates, naming, workflows. Hosted in `Malakof/.github`,
+versioned by semver tags, propagated to target repos via the pin file
+`.crystal-governance.yaml` and `crystal-company/builders/sync_repo_surface.py`.
 
-**Schéma** : `crystal-governance/v1`
-**Version** : 1.0.0
+**Schema**: `crystal-governance/v1`
+**Version**: 1.0.0
 
 ---
 
-## 1. Pack Coeur — labels, commits, titres PR/issues
+## 1. Core Pack — labels, commits, PR/issue titles
 
 ### 1.1 Labels
 
-Voir [`labels.yaml`](./labels.yaml) pour la table canonique complète.
+See [`labels.yaml`](./labels.yaml) for the full canonical table.
 
-**Règles d'application sur chaque issue/PR :**
+**Application rules on every issue/PR:**
 
-- **`priority:p*`** : exactement un, obligatoire.
-- **`type:*`** : exactement un, obligatoire.
-- **`status:*`** : optionnel — `status:triage` est posé par défaut sur intake.
-- **`area:*`** : recommandé, libre `area:<domain-kebab>` si valeur absente.
-- **`release:*`** : optionnel, libre `release:<milestone-kebab>`.
-- **`stream:*` / `scenario:*` / `agent:*` / `crystal:*` / `mission:*`** : selon le repo (voir `applies_to` dans `labels.yaml`).
-- **`crystal:agent|stage|status|runtime|mission|parent|child:*`** : ÉMIS UNIQUEMENT par le kernel paperclip. Ne jamais poser à la main.
-
-**Migration depuis l'historique** : voir [`migration-map.yaml`](./migration-map.yaml).
+- **`priority:p*`**: exactly one, mandatory.
+- **`type:*`**: exactly one, mandatory.
+- **`status:*`**: optional — `status:triage` is set by default on intake.
+- **`area:*`**: recommended, free-form `area:<domain-kebab>` if no preset matches.
+- **`release:*`**: optional, free-form `release:<milestone-kebab>`.
+- **`stream:*` / `scenario:*` / `agent:*` / `crystal:*` / `mission:*`**: per repo (see `applies_to` in `labels.yaml`).
+- **`crystal:agent|stage|status|runtime|mission|parent|child:*`**: EMITTED ONLY by paperclip kernel. Never set manually.
 
 ### 1.2 Conventional Commits
 
-Format strict :
+Strict format:
 
 ```
 <type>(<scope>)?: <subject>
@@ -40,207 +38,204 @@ Format strict :
 [<footer>]
 ```
 
-**Types autorisés** : `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
+**Allowed types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
 `test`, `build`, `ci`, `chore`, `revert`.
 
-**Scopes** : par repo dans [`scopes.yaml`](./scopes.yaml). Optionnels mais
-recommandés pour les repos avec plus d'un domaine fonctionnel.
+**Scopes**: per repo in [`scopes.yaml`](./scopes.yaml). Optional but
+recommended on repos with multiple functional domains.
 
-**Subject** : impératif présent, ≤ 72 caractères, pas de point final,
-minuscule au début (sauf nom propre).
+**Subject**: imperative present, ≤ 72 chars, no trailing period,
+lowercase first letter (unless proper noun).
 
-**Footer** :
-- `Closes #123` / `Fixes #123` pour fermeture auto.
-- `Refs #123` pour lien sans fermeture.
-- `Co-authored-by: Name <email>` pour co-paternité.
-- `BREAKING CHANGE: <description>` pour changements rétro-incompatibles
-  (déclenche bump major en SemVer).
+**Footer**:
+- `Closes #123` / `Fixes #123` for auto-close.
+- `Refs #123` for link without close.
+- `Co-authored-by: Name <email>` for co-authorship.
+- `BREAKING CHANGE: <description>` for backwards-incompatible changes
+  (triggers MAJOR bump in SemVer).
 
-**Sign-off** : non requis sauf demande explicite côté repo.
+**Sign-off**: not required unless explicitly requested per repo.
 
-### 1.3 Titres de PR et d'issues
+### 1.3 PR and issue titles
 
-**PR** : strictement Conventional Commits. Le workflow `enforce-conventions`
-rejette tout titre non conforme.
+**PR**: strict Conventional Commits. The `enforce-conventions` workflow
+rejects any non-conforming title.
 
-**Issue** :
-- `type:epic` → préfixe `[EPIC] <subject>` (le préfixe est posé en plus
-  du label `type:epic` pour visibilité humaine).
-- Tous les autres types → `<type>: <subject>` (subject impératif présent,
+**Issue**:
+- `type:epic` → prefix `[EPIC] <subject>` (the prefix is set in addition
+  to the `type:epic` label for human visibility).
+- All other types → `<type>: <subject>` (imperative present subject,
   ≤ 80 chars).
 
-**Body** : utiliser les ISSUE_TEMPLATE fournis (epic, feature, bug,
-mission-intake). Sections obligatoires : `Context`, `Acceptance criteria`,
-`Out of scope`. Sections optionnelles : `Validation`, `Links`.
+**Body**: use the provided ISSUE_TEMPLATE (epic, feature, bug,
+mission-intake). Required sections: `Context`, `Acceptance criteria`,
+`Out of scope`. Optional sections: `Validation`, `Links`.
 
-### 1.4 Workflow EPIC ↔ sub-issues
+### 1.4 EPIC ↔ sub-issues workflow
 
-**Source de vérité** : [GitHub sub-issues natives](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues).
+**Source of truth**: [GitHub native sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues).
 
-Le template `epic.yml` rappelle de créer les enfants comme sub-issues
-(API : `gh api repos/{owner}/{repo}/issues/{n}/sub_issues`). La dark factory
-les ingère via la même API (cf. `docs/mvp-milestone-plan.md:74-80` côté
-`crystal-dark-factory-poc`).
+The `epic.yml` template reminds to create children as native sub-issues
+(API: `gh api repos/{owner}/{repo}/issues/{n}/sub_issues`). The dark
+factory ingests them via the same API.
 
-**Pas de checklist Markdown miroir** : un enfant est une vraie sub-issue,
-pas une ligne `- [ ]` dans le body.
+**No mirror Markdown checklist**: a child is a real sub-issue,
+not a `- [ ]` line in the body.
 
 ---
 
-## 2. Pack Git lifecycle — branches, tags, releases
+## 2. Git Lifecycle Pack — branches, tags, releases
 
 ### 2.1 Branches
 
-| Pattern | Usage |
+| Pattern | Use |
 |---|---|
-| `<author>/<topic-kebab>` | Branche humaine de travail (ex: `richard/refactor-auth`). |
-| `<agent>/<topic-kebab>` | Branche d'agent IA (ex: `codex/openhands-phase-4-parity`, `claude/spec-review`). |
-| `feature/<topic-kebab>` | Branche fonctionnelle longue durée. |
-| `fix/<topic-kebab>` | Correctif court. |
+| `<author>/<topic-kebab>` | Human work branch (e.g. `richard/refactor-auth`). |
+| `<agent>/<topic-kebab>` | AI agent branch (e.g. `codex/openhands-phase-4-parity`, `claude/spec-review`). |
+| `feature/<topic-kebab>` | Long-running feature branch. |
+| `fix/<topic-kebab>` | Short fix. |
 | `chore/<topic-kebab>` | Maintenance. |
-| `release/v<X>.<Y>.<Z>` | Cut de release. |
-| `hotfix/v<X>.<Y>.<Z>-<topic>` | Correctif post-release. |
+| `release/v<X>.<Y>.<Z>` | Release cut. |
+| `hotfix/v<X>.<Y>.<Z>-<topic>` | Post-release fix. |
 
-**Contraintes** : kebab-case, ≤ 60 caractères au total, pas de séparateur
-double, pas d'espaces. La branche par défaut reste `main`.
+**Constraints**: kebab-case, ≤ 60 chars total, no double separators,
+no spaces. Default branch remains `main`.
 
 ### 2.2 Tags
 
-SemVer strict : `vMAJOR.MINOR.PATCH`. Pre-releases :
+Strict SemVer: `vMAJOR.MINOR.PATCH`. Pre-releases:
 `v<X>.<Y>.<Z>-rc.<N>`, `v<X>.<Y>.<Z>-beta.<N>`, `v<X>.<Y>.<Z>-alpha.<N>`.
 
-**Bumps** :
-- `BREAKING CHANGE` ou `feat!:` → MAJOR
+**Bumps**:
+- `BREAKING CHANGE` or `feat!:` → MAJOR
 - `feat:` → MINOR
 - `fix:`, `perf:`, `refactor:` → PATCH
-- `chore:`, `docs:`, `test:`, `ci:`, `build:`, `style:` → pas de bump (sauf
-  si décision explicite côté maintainer).
+- `chore:`, `docs:`, `test:`, `ci:`, `build:`, `style:` → no bump (unless
+  explicit maintainer decision).
 
 ### 2.3 Releases
 
-- **Changelog** : format [Keep-A-Changelog](https://keepachangelog.com/en/1.1.0/).
-- **Release notes** : auto-générées depuis Conventional Commits (workflow
-  `release-notes.yml` — fourni en V2).
-- **Tag → Release** : chaque tag SemVer publie une release GitHub.
-- **Pre-release** : tag avec `-rc.N` / `-beta.N` publie une release marquée
+- **Changelog**: [Keep-A-Changelog](https://keepachangelog.com/en/1.1.0/) format.
+- **Release notes**: auto-generated from Conventional Commits (workflow
+  `release-notes.yml` — provided in V2).
+- **Tag → Release**: every SemVer tag publishes a GitHub release.
+- **Pre-release**: tag with `-rc.N` / `-beta.N` publishes a release marked
   `prerelease: true`.
 
 ---
 
-## 3. Pack Crystal-specific — missions, codenames, worktrees
+## 3. Crystal-specific Pack — missions, codenames, worktrees
 
 ### 3.1 Mission codes
 
-Format : `<REPO_PREFIX>-<TYPE>-<NUM>`
+Format: `<REPO_PREFIX>-<TYPE>-<NUM>`
 
-| Repo | Préfixe |
+| Repo | Prefix |
 |---|---|
 | `crystal-assistant-ui-poc` | `PAUI` |
 | `crystal-dark-factory-poc` | `DFP` |
 | `crystal-dark-factory-target-lab` | `DFL` |
-| `crystal-discord-bot` | `BEACON` (codename historique) |
+| `crystal-discord-bot` | `BEACON` (historical codename) |
 | `crystal-specs` | `SPEC` |
 | `crystal-company` | `COMP` |
 
-**Types** : `FEAT`, `BUG`, `SPIKE`, `DOC`, `MIGR`, `OPS`.
-**Num** : 3 chiffres zero-padded, alloués séquentiellement par repo.
+**Types**: `FEAT`, `BUG`, `SPIKE`, `DOC`, `MIGR`, `OPS`.
+**Num**: 3-digit zero-padded, allocated sequentially per repo.
 
-**Exemples** : `PAUI-FEAT-001`, `DFP-BUG-014`, `BEACON-SPIKE-003`.
+**Examples**: `PAUI-FEAT-001`, `DFP-BUG-014`, `BEACON-SPIKE-003`.
 
 ### 3.2 Stream codenames
 
-Réservés (pas de doublons, ajouts via ADR) :
+Reserved (no duplicates, additions via ADR):
 
-| Codename | Domaine |
+| Codename | Domain |
 |---|---|
 | `atlas` | Operator contracts (Stream A) |
 | `beacon` | Discord brain migration (Stream C) |
 | `forge` | Durable spine + abstractions (Stream B) |
 | `compass` | Cost ledger + onboarding (Stream D) |
 
-Tout nouveau codename doit être validé par ADR avant usage en branche/label.
+Any new codename must be validated by ADR before use in branches/labels.
 
-### 3.3 Worktrees agents
+### 3.3 Agent worktrees
 
-| Pattern | Outil |
+| Pattern | Tool |
 |---|---|
-| `/private/tmp/<codename>-<release>` | Branches d'agents éphémères pendant un pilote. |
-| `~/.codex/worktrees/<codename>` | Worktrees persistants Codex. |
-| `.claude/worktrees/<codename>` | Worktrees Claude (locaux au repo). |
+| `/private/tmp/<codename>-<release>` | Ephemeral agent branches during a pilot. |
+| `~/.codex/worktrees/<codename>` | Persistent Codex worktrees. |
+| `.claude/worktrees/<codename>` | Claude worktrees (repo-local). |
 
-### 3.4 Stages canoniques (kernel paperclip)
+### 3.4 Canonical stages (paperclip kernel)
 
 `prepare → spec-contract → implement → review → ship`
 
-Projetés automatiquement comme labels `crystal:stage:*`. Ne pas poser à la main.
+Projected automatically as `crystal:stage:*` labels. Never set manually.
 
 ---
 
-## 4. Pack Infra — ADR/PRD, workflows, secrets, repos
+## 4. Infra Pack — ADR/PRD, workflows, secrets, repos
 
 ### 4.1 ADR & PRD
 
-| Type | Chemin | Format filename |
+| Type | Path | Filename format |
 |---|---|---|
-| ADR | `docs/adr/` | `NNNN-titre-kebab.md` (4 chiffres) |
-| PRD | `docs/prd/` | `NNNN-titre-kebab.md` (4 chiffres) |
+| ADR | `docs/adr/` | `NNNN-title-kebab.md` (4 digits) |
+| PRD | `docs/prd/` | `NNNN-title-kebab.md` (4 digits) |
 
-**Statuts ADR** : `proposed | accepted | superseded | deprecated`.
-**Template** : voir [`adr-template.md`](./adr-template.md) (à fournir en V1.1).
+**ADR statuses**: `proposed | accepted | superseded | deprecated`.
 
-### 4.2 Workflows GitHub Actions
+### 4.2 GitHub Actions workflows
 
-| Pattern | Exemple |
+| Pattern | Example |
 |---|---|
 | `<verb>-<object>.yml` | `enforce-conventions.yml`, `publish-release.yml`, `sync-labels.yml` |
-| Reusable workflows | hébergés dans `Malakof/.github/.github/workflows/`, appelés via `uses: Malakof/.github/.github/workflows/<name>.yml@v<X.Y.Z>` |
+| Reusable workflows | hosted in `Malakof/.github/.github/workflows/`, called via `uses: Malakof/.github/.github/workflows/<name>.yml@v<X.Y.Z>` |
 
-**Concurrence** : `concurrency: { group: <verb>-<object>-${{ github.ref }}, cancel-in-progress: true }` recommandé.
+**Concurrency**: `concurrency: { group: <verb>-<object>-${{ github.ref }}, cancel-in-progress: true }` recommended.
 
 ### 4.3 Secrets
 
-Format : `CRYSTAL_<DOMAIN>_<PURPOSE>` (uppercase, underscores).
+Format: `CRYSTAL_<DOMAIN>_<PURPOSE>` (uppercase, underscores).
 
-| Exemple | Usage |
+| Example | Use |
 |---|---|
-| `CRYSTAL_DISCORD_BOT_TOKEN` | Token Discord du Beacon. |
-| `CRYSTAL_GITHUB_PAT` | PAT pour le sync inter-repos. |
-| `CRYSTAL_OPENAI_API_KEY` | Clé OpenAI. |
-| `CRYSTAL_ANTHROPIC_API_KEY` | Clé Anthropic. |
-| `CRYSTAL_OPS_VPS_SSH` | Clé SSH ops VPS 77.42.86.121. |
+| `CRYSTAL_DISCORD_BOT_TOKEN` | Beacon Discord token. |
+| `CRYSTAL_GITHUB_PAT` | PAT for cross-repo sync. |
+| `CRYSTAL_OPENAI_API_KEY` | OpenAI key. |
+| `CRYSTAL_ANTHROPIC_API_KEY` | Anthropic key. |
+| `CRYSTAL_OPS_VPS_SSH` | VPS ops SSH key. |
 
-**Env vars** : même règle, mêmes préfixes.
+**Env vars**: same rule, same prefixes.
 
 ### 4.4 Repo names
 
-Pattern : `crystal-<scope>-<purpose>` (kebab-case).
+Pattern: `crystal-<scope>-<purpose>` (kebab-case).
 
-| Exemple | OK |
+| Example | OK |
 |---|---|
 | `crystal-discord-bot` | ✓ |
 | `crystal-assistant-ui-poc` | ✓ |
 | `crystal-dark-factory-poc` | ✓ |
-| `polaris-scratch-20260416T230130Z` | ✗ (legacy, à archiver après 30j) |
+| `polaris-scratch-20260416T230130Z` | ✗ (legacy, archive after 30d) |
 
-**Visibilité** : par défaut privé. Public uniquement après revue
-sécurité/secrets explicite.
+**Visibility**: private by default. Public only after explicit
+security/secrets review.
 
-**Archivage** : repos `polaris-scratch-*` et `*-test` archivés après
-30 jours d'inactivité. Workflow `archive-stale-repos.yml` (fourni en V2)
-applique automatiquement.
+**Archival**: scratch and `*-test` repos archived after 30 days of
+inactivity.
 
 ---
 
-## 5. Versioning de cette gouvernance
+## 5. Governance versioning
 
-- **Source** : `Malakof/.github` repo, branche `main` éditable.
-- **Releases** : tags semver `vMAJOR.MINOR.PATCH` sur cette gouvernance.
-  - **Major** : breaking change dans labels/templates (suppression de
-    label sans alias, changement de namespace).
-  - **Minor** : ajout de label/template/skill, changement non breaking.
-  - **Patch** : doc, descriptions, couleurs.
-- **Pin par repo** : chaque repo Crystal porte `.crystal-governance.yaml`
-  qui pin une version :
+- **Source**: `Malakof/.github` repo, editable on `main`.
+- **Releases**: SemVer tags `vMAJOR.MINOR.PATCH` on this governance.
+  - **Major**: breaking change in labels/templates (label removal without
+    alias, namespace change).
+  - **Minor**: addition of label/template/skill, non-breaking change.
+  - **Patch**: doc, descriptions, colors.
+- **Per-repo pin**: each Crystal repo carries `.crystal-governance.yaml`
+  pinning a version:
 
   ```yaml
   schema: crystal-governance-pin/v1
@@ -248,34 +243,31 @@ applique automatiquement.
   source: Malakof/.github
   ```
 
-- **Bump-PR auto** : à chaque release de `Malakof/.github`, le workflow
-  `on-release-bump.yml` ouvre une PR `chore: bump governance to vX.Y.Z`
-  sur chaque repo Crystal qui pin une version antérieure.
-- **governance-check CI** : workflow réutilisable appelé par chaque repo
-  pour vérifier (a) que `governance_version` existe dans `.github`,
-  (b) que les labels sont synchronisés, (c) que les templates ne sont pas
-  écrasés localement.
+- **Auto bump-PR**: on every `Malakof/.github` release, the
+  `on-release-bump.yml` workflow opens a `chore: bump governance to vX.Y.Z`
+  PR on each Crystal repo pinning an older version.
+- **governance-check CI**: reusable workflow called from each repo to
+  verify (a) `governance_version` exists in `.github`, (b) labels are in
+  sync, (c) templates are not overridden locally.
 
 ---
 
-## 6. Adoption sur un nouveau repo
+## 6. Adoption on a new repo
 
-1. Ajouter `.crystal-governance.yaml` (pin la dernière version stable).
-2. Ajouter `.github/workflows/governance-check.yml` qui appelle le reusable.
-3. Lancer `gh workflow run governance-check.yml` pour valider.
-4. Lancer `python scripts/sync-labels.py --repo <owner>/<repo>` depuis
-   `Malakof/.github` pour appliquer la taxonomie canonique.
-5. (optionnel) Lancer `migrate-labels.py` si le repo a des labels legacy.
+1. Add `.crystal-governance.yaml` (pin the latest stable version).
+2. Add `.github/workflows/governance-check.yml` calling the reusable.
+3. Run `gh workflow run governance-check.yml` to validate.
+4. Run `python scripts/sync-labels.py --repo <owner>/<repo>` from
+   `Malakof/.github` to apply the canonical taxonomy.
 
 ---
 
-## 7. Références
+## 7. References
 
-- `labels.yaml` — table canonique des labels
-- `migration-map.yaml` — renommages depuis l'historique
-- `scopes.yaml` — scopes Conventional Commits par repo
-- `.github/ISSUE_TEMPLATE/` — templates issues
-- `.github/PULL_REQUEST_TEMPLATE.md` — template PR
-- `.github/workflows/enforce-conventions.yml` — validation titre/labels
-- `.github/workflows/governance-check.yml` — vérif pin + skills
-- `skills/crystal-github-conventions/SKILL.md` — skill agents IA (format universel Claude + Codex, propagé vers `.claude/skills/` et `.agents/skills/`)
+- `labels.yaml` — canonical label table
+- `scopes.yaml` — Conventional Commits scopes per repo
+- `.github/ISSUE_TEMPLATE/` — issue templates
+- `.github/PULL_REQUEST_TEMPLATE.md` — PR template
+- `.github/workflows/enforce-conventions.yml` — title/labels validation
+- `.github/workflows/governance-check.yml` — pin + skills check
+- `skills/crystal-github-conventions/SKILL.md` — AI agents skill (universal Claude + Codex format, propagated to `.claude/skills/` and `.agents/skills/`)

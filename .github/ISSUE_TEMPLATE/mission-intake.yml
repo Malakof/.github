@@ -1,5 +1,5 @@
-name: "Mission intake — candidate dark factory"
-description: "Issue candidate pour ingestion comme mission Crystal par la dark factory."
+name: "Mission intake — dark factory candidate"
+description: "Issue candidate for ingestion as a Crystal mission by the dark factory."
 title: "intake: "
 labels:
   - "crystal:intake"
@@ -9,14 +9,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        Ce template crée une issue candidate à l'ingestion par la dark factory. Elle sera transformée en mission Crystal lors du prochain `dark-factory epic-plan` ou import manuel.
+        This template creates an issue candidate for dark factory ingestion. It will become a Crystal mission on the next `dark-factory epic-plan` run or manual import.
 
-        Voir [governance/README.md §3.1](https://github.com/Malakof/.github/blob/main/governance/README.md#31-mission-codes) pour les conventions de mission codes.
+        See [governance/README.md §3.1](https://github.com/Malakof/.github/blob/main/governance/README.md#31-mission-codes) for mission code conventions.
   - type: input
     id: mission_code
     attributes:
-      label: Mission code (proposé)
-      description: "Format `<REPO_PREFIX>-<TYPE>-<NUM>`. Laisse vide si non alloué — la dark factory ou un mainteneur l'attribuera."
+      label: Mission code (proposed)
+      description: "Format `<REPO_PREFIX>-<TYPE>-<NUM>`. Leave empty if unallocated — the dark factory or a maintainer will assign it."
       placeholder: "PAUI-FEAT-042"
     validations:
       required: false
@@ -24,14 +24,14 @@ body:
     id: context
     attributes:
       label: Context
-      description: Pourquoi cette mission. Problème ou besoin.
+      description: Why this mission. Problem or need.
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
       label: Scope
-      description: Ce qui doit être livré.
+      description: What must be delivered.
     validations:
       required: true
   - type: textarea
@@ -49,8 +49,8 @@ body:
   - type: textarea
     id: validation_contract
     attributes:
-      label: Validation contract (optionnel)
-      description: Si déjà défini ou un draft. Sinon laissé au spec-lead.
+      label: Validation contract (optional)
+      description: If already defined or a draft. Otherwise left to spec-lead.
     validations:
       required: false
   - type: dropdown
@@ -68,8 +68,8 @@ body:
   - type: dropdown
     id: runtime_preference
     attributes:
-      label: Runtime préférence (optionnel)
-      description: "Lane suggérée — la kernel peut réassigner."
+      label: Runtime preference (optional)
+      description: "Suggested lane — the kernel may reassign."
       options:
         - "no preference"
         - "claude"

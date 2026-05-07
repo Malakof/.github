@@ -1,97 +1,92 @@
 # Malakof/.github — Crystal GitHub governance
 
-Source de vérité unique pour les conventions GitHub Crystal :
-labels, templates issues/PR, naming, workflows réutilisables, skill agents.
+Single source of truth for Crystal team GitHub conventions:
+labels, issue/PR templates, naming, reusable workflows, agent skill.
 
-**Version courante** : `v1.0.0` (voir `.crystal-governance.yaml`).
+**Current version**: `v1.0.2` (see `.crystal-governance.yaml`).
 
-## Pour les humains
+## For humans
 
-- **Doc canonique** : [`governance/README.md`](./governance/README.md)
-- **Table des labels** : [`governance/labels.yaml`](./governance/labels.yaml)
-- **Migration depuis legacy** : [`governance/migration-map.yaml`](./governance/migration-map.yaml)
-- **Scopes Conventional Commits** : [`governance/scopes.yaml`](./governance/scopes.yaml)
+- **Canonical document**: [`governance/README.md`](./governance/README.md)
+- **Label table**: [`governance/labels.yaml`](./governance/labels.yaml)
+- **Conventional Commits scopes**: [`governance/scopes.yaml`](./governance/scopes.yaml)
 
-## Pour les agents IA
+## For AI agents
 
-- **Skill** : [`skills/crystal-github-conventions/SKILL.md`](./skills/crystal-github-conventions/SKILL.md)
+- **Skill**: [`skills/crystal-github-conventions/SKILL.md`](./skills/crystal-github-conventions/SKILL.md)
 
-Format universel `SKILL.md` (frontmatter YAML `name` + `description`)
-reconnu par Claude **et** Codex. Propagation automatique par
-`crystal-company/builders/sync_repo_surface.py` vers les deux surfaces :
+Universal `SKILL.md` format (YAML frontmatter `name` + `description`)
+recognised by Claude **and** Codex. Automatically propagated by
+`crystal-company/builders/sync_repo_surface.py` to both surfaces:
 
-- `.claude/skills/crystal-github-conventions/` — surface Claude
-- `.agents/skills/crystal-github-conventions/` — surface Codex (skills universels,
-  cf. [doc Codex](https://developers.openai.com/codex/skills))
+- `.claude/skills/crystal-github-conventions/` — Claude surface
+- `.agents/skills/crystal-github-conventions/` — Codex surface (universal skills,
+  see [Codex docs](https://developers.openai.com/codex/skills))
 
-> Note : `.codex/agents/` est réservé aux **agents** Codex (rôles type
-> reviewer/CEO/CTO en TOML). Les conventions GitHub Crystal sont un
-> *skill* (capacité référence), pas un agent — donc pas de fichier dans
-> `.codex/agents/`.
+> Note: `.codex/agents/` is reserved for Codex **agents** (roles like
+> reviewer/CEO/CTO in TOML). Crystal GitHub conventions are a *skill*
+> (reference capability), not an agent — so no file in `.codex/agents/`.
 
-## Pour les repos Crystal
+## For Crystal repos
 
-Ajoute dans le repo cible :
+Add to the target repo:
 
-1. `.crystal-governance.yaml` :
+1. `.crystal-governance.yaml`:
    ```yaml
    schema: crystal-governance-pin/v1
-   governance_version: v1.0.0
+   governance_version: v1.0.2
    source: Malakof/.github
    ```
 
-2. `.github/workflows/governance-check.yml` :
+2. `.github/workflows/governance-check.yml`:
    ```yaml
    name: governance-check
    on: [push, pull_request]
    jobs:
      check:
-       uses: Malakof/.github/.github/workflows/governance-check.yml@v1.0.0
+       uses: Malakof/.github/.github/workflows/governance-check.yml@v1.0.2
    ```
 
-3. `.github/workflows/enforce-conventions.yml` :
+3. `.github/workflows/enforce-conventions.yml`:
    ```yaml
    name: enforce-conventions
    on: [pull_request]
    jobs:
      enforce:
-       uses: Malakof/.github/.github/workflows/enforce-conventions.yml@v1.0.0
+       uses: Malakof/.github/.github/workflows/enforce-conventions.yml@v1.0.2
    ```
 
-4. Lance le sync labels :
+4. Run label sync:
    ```sh
    gh repo clone Malakof/.github /tmp/crystal-governance
    cd /tmp/crystal-governance
    python scripts/sync-labels.py --repo <owner>/<name>
-   python scripts/migrate-labels.py --repo <owner>/<name> --dry-run
-   python scripts/migrate-labels.py --repo <owner>/<name>  # apply
    ```
 
-## Workflow de release
+## Release workflow
 
-À chaque tag semver `vX.Y.Z` poussé sur `main` de ce repo :
+On every semver tag `vX.Y.Z` pushed on `main`:
 
-- `.github/workflows/on-release-bump.yml` ouvre des PRs `chore: bump
-  governance to vX.Y.Z` sur tous les repos `Malakof/crystal-*` non archivés
-  qui pinent une version antérieure.
+- `.github/workflows/on-release-bump.yml` opens `chore: bump governance
+  to vX.Y.Z` PRs on every non-archived `Malakof/crystal-*` repo pinning
+  an older version.
 
 ## Versioning
 
-- **Major** : suppression de label, breaking template change.
-- **Minor** : ajout de label, nouveau template/skill/workflow.
-- **Patch** : couleurs, descriptions, doc.
+- **Major**: label removal, breaking template change.
+- **Minor**: label addition, new template/skill/workflow.
+- **Patch**: colors, descriptions, doc.
 
 ## Structure
 
 ```
 .
-├── README.md                       ← ce fichier
+├── README.md                       ← this file
 ├── .crystal-governance.yaml        ← self-pin
 ├── governance/
-│   ├── README.md                   ← doc canonique (4 packs nommage)
-│   ├── labels.yaml                 ← table canonique
-│   ├── migration-map.yaml          ← renommages legacy → canonique
-│   └── scopes.yaml                 ← scopes Conventional Commits
+│   ├── README.md                   ← canonical document (4 naming packs)
+│   ├── labels.yaml                 ← canonical label table
+│   └── scopes.yaml                 ← Conventional Commits scopes
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   │   ├── epic.yml
@@ -103,13 +98,13 @@ Ajoute dans le repo cible :
 │   └── workflows/
 │       ├── enforce-conventions.yml ← reusable
 │       ├── governance-check.yml    ← reusable
-│       └── on-release-bump.yml     ← interne (sur tag)
+│       └── on-release-bump.yml     ← internal (on tag)
 ├── skills/
-│   └── crystal-github-conventions/   ← propagé vers .claude/skills + .agents/skills
+│   └── crystal-github-conventions/   ← propagated to .claude/skills + .agents/skills
 │       └── SKILL.md
 └── scripts/
     ├── sync-labels.py
-    ├── migrate-labels.py
+    ├── setup-autolinks.py
     ├── validate_title.py
     ├── validate_labels.py
     └── open-bump-prs.py

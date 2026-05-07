@@ -1,11 +1,11 @@
 <!--
-  Titre : Conventional Commits strict — <type>(<scope>)?: <subject>
-  Voir governance/README.md §1.2-1.3
+  Title: strict Conventional Commits — <type>(<scope>)?: <subject>
+  See governance/README.md §1.2-1.3
 -->
 
 ## Summary
 
-<!-- 1-3 bullet points de ce qui change et pourquoi. -->
+<!-- 1-3 bullet points describing what changes and why. -->
 
 -
 
@@ -17,39 +17,39 @@ Closes #
 
 ## Type of change
 
-<!-- Coche celui qui s'applique. Doit correspondre au préfixe du titre. -->
+<!-- Tick the one that applies. Must match the title prefix. -->
 
-- [ ] feat — nouvelle fonctionnalité
-- [ ] fix — correction de bug
-- [ ] docs — documentation seulement
-- [ ] refactor — réorganisation interne
-- [ ] perf — amélioration de performance
-- [ ] test — couverture de test
-- [ ] build — système de build / dépendances
-- [ ] ci — workflows CI
+- [ ] feat — new feature
+- [ ] fix — bug fix
+- [ ] docs — documentation only
+- [ ] refactor — internal reorganisation
+- [ ] perf — performance improvement
+- [ ] test — test coverage
+- [ ] build — build system / dependencies
+- [ ] ci — CI workflows
 - [ ] chore — maintenance
-- [ ] revert — annulation d'un commit précédent
+- [ ] revert — revert a previous commit
 
 ## Test plan
 
-<!-- Comment as-tu vérifié ? Commandes lancées, scénarios, evidence. -->
+<!-- How did you verify? Commands run, scenarios, evidence. -->
 
 - [ ]
 
 ## Breaking changes
 
 <!--
-  Si BREAKING CHANGE, décris l'impact et la migration.
-  Sinon : "None".
+  If BREAKING CHANGE, describe impact and migration.
+  Otherwise: "None".
 -->
 
 None
 
 ## Checklist
 
-- [ ] Le titre suit Conventional Commits
-- [ ] Les labels appliqués sont conformes à `governance/labels.yaml`
-- [ ] Issue liée si applicable (`Closes #` ou `Refs #`)
-- [ ] Tests passent localement
-- [ ] Doc mise à jour si comportement utilisateur change
-- [ ] Pas de secret/credential committé
+- [ ] Title follows Conventional Commits
+- [ ] Applied labels conform to `governance/labels.yaml`
+- [ ] Linked issue if applicable (`Closes #` or `Refs #`)
+- [ ] Tests pass locally
+- [ ] Doc updated if user-facing behaviour changes
+- [ ] No secret/credential committed

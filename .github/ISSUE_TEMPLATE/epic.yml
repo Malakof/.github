@@ -1,5 +1,5 @@
-name: "[EPIC] Parent issue regroupant des sub-issues"
-description: "Issue parente pour orchestrer plusieurs sub-issues. Crée les enfants comme sub-issues GitHub natives."
+name: "[EPIC] Parent issue grouping sub-issues"
+description: "Parent issue orchestrating multiple sub-issues. Create children as native GitHub sub-issues."
 title: "[EPIC] "
 labels:
   - "type:epic"
@@ -8,50 +8,50 @@ body:
   - type: markdown
     attributes:
       value: |
-        ## Comment utiliser ce template
+        ## How to use this template
 
-        Une EPIC regroupe plusieurs livrables liés. Crée les enfants comme **sub-issues GitHub natives** (Add → Create sub-issue dans la sidebar) — pas en checklist Markdown. La dark factory ingère les sub-issues via l'API native.
+        An EPIC groups several related deliverables. Create children as **native GitHub sub-issues** (Add → Create sub-issue in the sidebar) — not as Markdown checklists. The dark factory ingests sub-issues via the native API.
 
-        Voir [governance/README.md §1.4](https://github.com/Malakof/.github/blob/main/governance/README.md#14-workflow-epic--sub-issues).
+        See [governance/README.md §1.4](https://github.com/Malakof/.github/blob/main/governance/README.md#14-epic--sub-issues-workflow).
   - type: textarea
     id: context
     attributes:
       label: Context
-      description: Pourquoi cette EPIC, quel problème ou opportunité.
-      placeholder: "L'objectif de cette EPIC est de ..."
+      description: Why this EPIC, what problem or opportunity.
+      placeholder: "The goal of this EPIC is to ..."
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: Conditions de complétion mesurables.
+      description: Measurable completion conditions.
       placeholder: |
-        - [ ] Toutes les sub-issues sont closes
-        - [ ] La validation X passe en CI
-        - [ ] La doc Y est à jour
+        - [ ] All sub-issues are closed
+        - [ ] Validation X passes in CI
+        - [ ] Doc Y is up to date
     validations:
       required: true
   - type: textarea
     id: out_of_scope
     attributes:
       label: Out of scope
-      description: Ce qui n'est PAS couvert par cette EPIC.
-      placeholder: "Cette EPIC ne traite pas ..."
+      description: What is NOT covered by this EPIC.
+      placeholder: "This EPIC does not address ..."
     validations:
       required: true
   - type: textarea
     id: validation
     attributes:
       label: Validation
-      description: Comment vérifier que l'EPIC est livrée. Référence vers contrat de validation si applicable.
+      description: How to verify the EPIC is delivered. Link to validation contract if applicable.
     validations:
       required: false
   - type: textarea
     id: links
     attributes:
       label: Links
-      description: ADR, PRD, missions, issues liées.
+      description: ADR, PRD, missions, related issues.
       placeholder: |
         - ADR-XXXX
         - PRD-XXXX
@@ -62,12 +62,12 @@ body:
     id: priority
     attributes:
       label: Priority
-      description: Priorité d'exécution (un seul `priority:p*` sera appliqué).
+      description: Execution priority (a single `priority:p*` will be applied).
       options:
-        - "p0 — bloquant pour le milestone courant"
-        - "p1 — important, à livrer si pas de blocage P0"
-        - "p2 — souhaitable, post-milestone"
-        - "p3 — backlog long terme"
+        - "p0 — blocking for the current milestone"
+        - "p1 — important, ship if no P0 blocker"
+        - "p2 — nice to have, post-milestone"
+        - "p3 — long-term backlog"
       default: 2
     validations:
       required: true

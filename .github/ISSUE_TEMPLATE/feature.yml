@@ -1,5 +1,5 @@
-name: "Feature — nouvelle fonctionnalité"
-description: "Demande ou proposition de nouvelle fonctionnalité."
+name: "Feature — new functionality"
+description: "Request or proposal for a new feature."
 title: "feat: "
 labels:
   - "type:feature"
@@ -9,18 +9,18 @@ body:
     id: context
     attributes:
       label: Context
-      description: Pourquoi cette feature, problème utilisateur ou besoin technique.
+      description: Why this feature, user problem or technical need.
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: Conditions de complétion mesurables.
+      description: Measurable completion conditions.
       placeholder: |
-        - [ ] Comportement attendu : ...
-        - [ ] Tests couvrent : ...
-        - [ ] Doc mise à jour : ...
+        - [ ] Expected behaviour: ...
+        - [ ] Tests cover: ...
+        - [ ] Doc updated: ...
     validations:
       required: true
   - type: textarea
@@ -33,7 +33,7 @@ body:
     id: validation
     attributes:
       label: Validation
-      description: Comment vérifier que la feature fonctionne (tests, scénarios, evidence).
+      description: How to verify the feature works (tests, scenarios, evidence).
     validations:
       required: false
   - type: textarea
