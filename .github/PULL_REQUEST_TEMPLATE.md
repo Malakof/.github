@@ -1,5 +1,6 @@
 <!--
   Title: strict Conventional Commits — <type>(<scope>)?: <subject>
+  Commit subjects: <type>(<scope>)?: <emoji> <subject>
   See governance/README.md §1.2-1.3
 -->
 
@@ -48,6 +49,7 @@ None
 ## Checklist
 
 - [ ] Title follows Conventional Commits
+- [ ] Commit subjects use the Crystal emoji commit format
 - [ ] Applied labels conform to `governance/labels.yaml`
 - [ ] Linked issue if applicable (`Closes #` or `Refs #`)
 - [ ] Tests pass locally

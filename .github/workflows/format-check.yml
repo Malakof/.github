@@ -41,12 +41,10 @@ jobs:
       issues: write
       models: read
     steps:
-      - name: Checkout governance source at pin
+      - name: Checkout caller repository
         uses: actions/checkout@v4
         with:
-          repository: Malakof/.github
-          path: .governance
-          ref: ${{ github.event.repository.default_branch == 'main' && 'main' || 'main' }}
+          fetch-depth: 1
 
       - name: Resolve governance pin
         id: pin
@@ -58,13 +56,15 @@ jobs:
             echo "version=main" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Re-checkout governance at pin (if not main)
-        if: steps.pin.outputs.version != 'main'
+      - name: Checkout governance at pin
         uses: actions/checkout@v4
         with:
           repository: Malakof/.github
           path: .governance
           ref: ${{ steps.pin.outputs.version }}
+
+      - name: Install Python dependencies
+        run: python3 -m pip install "PyYAML>=6.0"
 
       - name: Run format check (PR)
         if: github.event_name == 'pull_request'

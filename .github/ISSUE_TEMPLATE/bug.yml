@@ -1,9 +1,10 @@
 name: "Bug — anomaly to fix"
 description: "Incorrect behaviour, regression, error."
-title: "fix: "
+title: "bug: "
 labels:
   - "type:bug"
-  - "status:triage"
+  - "priority:p2"
+  - "status:needs-triage"
 body:
   - type: textarea
     id: context

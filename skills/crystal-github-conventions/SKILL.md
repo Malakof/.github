@@ -1,6 +1,6 @@
 ---
 name: crystal-github-conventions
-description: Use whenever you create, update, or comment on a GitHub issue, PR, branch, commit, tag, ADR, or PRD in any Crystal repo. Loads the canonical conventions (labels, Conventional Commits, naming, EPIC↔sub-issues workflow) so the artifact passes Malakof/.github enforcement and matches the team's contract.
+description: Use whenever you create, update, or comment on a GitHub issue, PR, branch, commit, tag, ADR, or PRD in any Crystal repo. Loads the canonical conventions (labels, emoji commits, naming, EPIC↔sub-issues workflow) so the artifact passes Malakof/.github enforcement and matches the team's contract.
 ---
 
 # Crystal GitHub conventions
@@ -25,9 +25,9 @@ repo's `.crystal-governance.yaml`:
 - `governance/labels.yaml` — canonical label table
 - `governance/scopes.yaml` — Conventional Commits scopes per repo
 
-If the local repo is missing `.crystal-governance.yaml`, default to `main` of
-`Malakof/.github` and emit a structured warning that the repo is not yet
-onboarded.
+If the local repo is missing `.crystal-governance.yaml`, emit a structured
+warning that the repo is not yet onboarded. Do not silently treat a missing pin
+as a complete governance state.
 
 ## Pre-flight checks before any artifact
 
@@ -41,25 +41,44 @@ onboarded.
 
 ### Labels (mandatory dimensions)
 
-Every issue/PR must carry exactly one `priority:p*` and one `type:*`. Optional:
-`status:*`, `area:*`, `release:*`. Repo-specific extensions (`stream:*`,
-`scenario:*`, `agent:*`) only on their target repos. **Never** apply
+Every issue/PR must carry exactly one `priority:p*` and one `type:*`.
+Optional: `status:*`, `area:*`, `release:*`. Preferred triage states are
+`status:needs-triage`, `status:needs-info`, `status:ready-for-agent`,
+`status:ready-for-human`, and `status:wontfix`.
+
+Repo-specific extensions (`stream:*`, `scenario:*`, `agent:*`) only on their
+target repos. **Never** apply
 `crystal:agent|stage|status|runtime|mission|parent|child:*` — those are emitted
 exclusively by the paperclip kernel.
 
+Dark Factory labels (`crystal:intake`, `crystal:backlog`, `mission:*`) are
+optional compatibility metadata. Add them only when the user or runner is
+explicitly preparing a Dark Factory intake issue. Existing historical metadata
+may remain in place.
+
 ### Conventional Commits
+
+PR titles:
 
 ```
 <type>(<scope>)?: <subject>
+```
+
+Commit subjects:
+
+```
+<type>(<scope>)?: <emoji> <subject>
 
 [<body>]
 
 [<footer>]
 ```
 
-Subject: imperative, ≤ 72 chars, no trailing period, lowercase first letter
-unless proper noun. Footer keywords: `Closes #N`, `Fixes #N`, `Refs #N`,
-`Co-authored-by: ...`, `BREAKING CHANGE: ...`.
+Use a targeted emoji from the Crystal palette: `✨`, `🐛`, `📝`, `♻️`, `✅`,
+`⬆️`, `👷`, `🔒`, `🚀`, `🧹`, `⚡`.
+
+Footer keywords: `Closes #N`, `Fixes #N`, `Refs #N`, `BREAKING CHANGE: ...`.
+Do not add `Co-authored-by` footers.
 
 Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
 `build`, `ci`, `chore`, `revert`. Scopes per repo come from `scopes.yaml`.
@@ -67,7 +86,8 @@ Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
 ### Issue titles
 
 - `type:epic` → `[EPIC] <subject>`
-- otherwise → `<type>: <subject>` (no scope on issues, just on commits/PRs)
+- otherwise → `<type>: <subject>` where `<type>` is one of `feature`, `bug`,
+  `chore`, `docs`, `refactor`, `spike`, `test`.
 
 ### EPIC ↔ sub-issues
 
@@ -84,10 +104,16 @@ ingestion explicitly fetches via `gh api repos/{owner}/{repo}/issues/{n}/sub_iss
 - **Bumps**: `BREAKING CHANGE` or `feat!:` → MAJOR, `feat:` → MINOR,
   `fix:`/`perf:`/`refactor:` → PATCH.
 
+Branches and PRs are optional. Direct `main` delivery is allowed for solo work,
+small trusted changes, documentation, governance maintenance, local cleanups, or
+when the user explicitly asks for it. The same commit and validation formalism
+applies whether the work lands via PR, branch, worktree merge, or direct `main`.
+
 ## Pack 3 — Crystal-specific
 
 - **Mission codes**: `<REPO_PREFIX>-<TYPE>-<NUM>` where `REPO_PREFIX` is
-  one of `PAUI`, `DFP`, `DFL`, `BEACON`, `SPEC`, `COMP` (see
+  one of `PAUI`, `DFP`, `DFL`, `BEACON`, `SPEC`, `COMP`, `CAP`, `COMPTA`,
+  `HERMES` (see
   `governance/README.md §3.1`), `TYPE` is `FEAT|BUG|SPIKE|DOC|MIGR|OPS`,
   `NUM` is 3-digit zero-padded.
 - **Stream codenames**: `atlas`, `beacon`, `forge`, `compass` only. New
@@ -130,6 +156,7 @@ Do NOT silently fall back to defaults — this matches the project memory
 | Artifact | Look at |
 |---|---|
 | New PR title | Pack 1 §Conventional Commits |
+| New commit | Pack 1 §Conventional Commits |
 | New issue | Pack 1 §Issue titles + ISSUE_TEMPLATE |
 | Choosing labels | `labels.yaml` (filter by `applies_to`) |
 | Branch name | Pack 2 §Branches |

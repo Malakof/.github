@@ -52,10 +52,28 @@ def main() -> int:
             f"Expected exactly one type:* label, got {sorted(type_labels) or 'none'}."
         )
 
-    # Enforce kernel-only namespace : if a kernel label is set and the PR is opened
-    # by a human (not bot), warn.
+    type_from_title = None
+    pr_payload = gh_json([
+        "pr", "view", str(args.pr),
+        "--repo", args.repo,
+        "--json", "title",
+    ]) or {}
+    title = pr_payload.get("title", "") if isinstance(pr_payload, dict) else ""
+    if ":" in title:
+        type_from_title = title.split(":", 1)[0].split("(", 1)[0].rstrip("!")
+    type_map = {"feat": "feature"}
+    if type_from_title:
+        expected_type = f"type:{type_map.get(type_from_title, type_from_title)}"
+        if len(type_labels) == 1 and type_labels[0] != expected_type:
+            issues.append(f"Expected type label {expected_type!r} to match PR title, got {type_labels[0]!r}.")
+
+    # Enforce kernel-only namespace: if a kernel label is set, warn. The workflow
+    # cannot reliably distinguish kernel projection from human application.
     kernel_prefixes = ("crystal:agent:", "crystal:stage:", "crystal:status:", "crystal:runtime:")
-    kernel_labels = [name for name in label_names if name.startswith(kernel_prefixes)]
+    kernel_exact = {"crystal:mission", "crystal:parent", "crystal:child"}
+    kernel_labels = [
+        name for name in label_names if name.startswith(kernel_prefixes) or name in kernel_exact
+    ]
     if kernel_labels:
         print(f"::notice::Kernel-projected labels detected: {sorted(kernel_labels)}. These should only be set by paperclip kernel.")
 

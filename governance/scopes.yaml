@@ -76,6 +76,31 @@ scopes:
     - tests
     - docs
 
+  crystal-capabilities:
+    - github
+    - governance
+    - capabilities
+    - skills
+    - plugins
+    - projections
+    - release
+    - tests
+    - docs
+
+  crystal-compta:
+    - api
+    - data
+    - docs
+    - infra
+    - tests
+
+  crystal-dark-factory-hermes:
+    - hermes
+    - adapter
+    - mission
+    - docs
+    - tests
+
   Malakof/.github:
     - labels
     - templates

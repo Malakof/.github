@@ -1,5 +1,5 @@
 name: enforce-conventions
-# Reusable workflow: validates PR title (Conventional Commits) + required labels.
+# Reusable workflow: validates PR title, labels, and commit messages.
 # Called from each Crystal repo:
 #   on: [pull_request]
 #   jobs:
@@ -22,22 +22,30 @@ jobs:
       pull-requests: read
       contents: read
     steps:
-      - name: Checkout governance source
+      - name: Checkout caller repository
         uses: actions/checkout@v4
         with:
-          repository: Malakof/.github
-          path: .governance
-          ref: main
+          fetch-depth: 0
 
       - name: Resolve pin version
         id: pin
         run: |
           if [ -f ".crystal-governance.yaml" ]; then
-            VERSION=$(yq '.governance_version' .crystal-governance.yaml)
+            VERSION=$(grep '^governance_version:' .crystal-governance.yaml | sed 's/governance_version: *//' | tr -d '"' | xargs)
             echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           else
             echo "version=main" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Checkout governance source
+        uses: actions/checkout@v4
+        with:
+          repository: Malakof/.github
+          path: .governance
+          ref: ${{ steps.pin.outputs.version }}
+
+      - name: Install Python dependencies
+        run: python3 -m pip install "PyYAML>=6.0"
 
       - name: Validate PR title (Conventional Commits)
         env:
@@ -57,4 +65,12 @@ jobs:
             --pr "${{ github.event.pull_request.number }}" \
             --repo "${{ github.repository }}" \
             --labels-file .governance/governance/labels.yaml \
+            --blocking "${{ inputs.blocking }}"
+
+      - name: Validate commit messages
+        run: |
+          python3 .governance/scripts/validate_commit_messages.py \
+            --rev-range "${{ github.event.pull_request.base.sha }}..HEAD" \
+            --repo "${{ github.repository }}" \
+            --scopes-file .governance/governance/scopes.yaml \
             --blocking "${{ inputs.blocking }}"

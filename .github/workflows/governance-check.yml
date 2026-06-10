@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Validate pin file exists
         run: |
@@ -35,7 +37,7 @@ jobs:
       - name: Resolve pin version
         id: pin
         run: |
-          VERSION=$(yq '.governance_version' .crystal-governance.yaml)
+          VERSION=$(grep '^governance_version:' .crystal-governance.yaml | sed 's/governance_version: *//' | tr -d '"' | xargs)
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "::notice::Pin = ${VERSION}"
 
@@ -56,6 +58,9 @@ jobs:
           path: .governance
           ref: ${{ steps.pin.outputs.version }}
 
+      - name: Install Python dependencies
+        run: python3 -m pip install "PyYAML>=6.0"
+
       - name: Verify labels align with pin
         env:
           GH_TOKEN: ${{ github.token }}
@@ -65,3 +70,20 @@ jobs:
             --labels-file .governance/governance/labels.yaml \
             --check-only \
             --strict "${{ inputs.strict }}"
+
+      - name: Validate pushed commit messages
+        if: github.event_name == 'push'
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            echo "::notice::Skipping pushed commit validation for new branch creation; PR validation checks base..HEAD."
+            exit 0
+          else
+            RANGE="${BEFORE}..${AFTER}"
+          fi
+          python3 .governance/scripts/validate_commit_messages.py \
+            --rev-range "$RANGE" \
+            --repo "${{ github.repository }}" \
+            --scopes-file .governance/governance/scopes.yaml \
+            --blocking "${{ inputs.strict }}"

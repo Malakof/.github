@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -22,6 +23,9 @@ from pathlib import Path
 
 PIN_FILENAME = ".crystal-governance.yaml"
 BRANCH_PREFIX = "chore/bump-governance-"
+WORKFLOW_REF_RE = re.compile(
+    r"(Malakof/\.github/\.github/workflows/[^@\s]+\.yml@)(v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?|main)"
+)
 
 
 def gh_json(args: list[str]) -> object:
@@ -79,6 +83,20 @@ def is_outdated(current: str | None, new: str) -> bool:
     return semver_tuple(current) < semver_tuple(new)
 
 
+def bump_workflow_refs(repo_path: Path, new_version: str) -> list[str]:
+    workflow_root = repo_path / ".github" / "workflows"
+    if not workflow_root.exists():
+        return []
+    changed: list[str] = []
+    for path in sorted(workflow_root.glob("*.yml")):
+        content = path.read_text(encoding="utf-8")
+        updated = WORKFLOW_REF_RE.sub(rf"\g<1>{new_version}", content)
+        if updated != content:
+            path.write_text(updated, encoding="utf-8")
+            changed.append(str(path.relative_to(repo_path)))
+    return changed
+
+
 def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
     branch = f"{BRANCH_PREFIX}{new_version}"
     if dry_run:
@@ -103,6 +121,7 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
                 "source: Malakof/.github\n",
                 encoding="utf-8",
             )
+        workflow_changes = bump_workflow_refs(cwd, new_version)
         subprocess.run(["git", "checkout", "-b", branch], cwd=cwd, check=True)
         subprocess.run(
             ["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"],
@@ -112,9 +131,15 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             ["git", "config", "user.name", "github-actions[bot]"],
             cwd=cwd, check=True,
         )
-        subprocess.run(["git", "add", PIN_FILENAME], cwd=cwd, check=True)
+        add_paths = [PIN_FILENAME]
+        if (cwd / ".github" / "workflows").exists():
+            add_paths.append(".github/workflows")
+        subprocess.run(["git", "add", *add_paths], cwd=cwd, check=True)
+        diff_check = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=cwd, check=False)
+        if diff_check.returncode == 0:
+            return {"repo": repo, "action": "skipped", "current": new_version, "branch": branch}
         subprocess.run(
-            ["git", "commit", "-m", f"chore: bump governance to {new_version}"],
+            ["git", "commit", "-m", f"chore: 🧹 bump governance to {new_version}"],
             cwd=cwd, check=True,
         )
         subprocess.run(["git", "push", "-u", "origin", branch], cwd=cwd, check=True)
@@ -124,7 +149,13 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             "--repo", repo,
             "--head", branch,
             "--title", f"chore: bump governance to {new_version}",
-            "--body", f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}`.\n\nReleased from Malakof/.github.",
+            "--body",
+            (
+                f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}` "
+                "and updates reusable Malakof/.github workflow refs when present.\n\n"
+                f"Workflow refs updated: {', '.join(workflow_changes) if workflow_changes else 'none'}.\n\n"
+                "Released from Malakof/.github."
+            ),
         ]
         result = subprocess.run(pr_args + ["--label", "type:chore", "--label", "priority:p2"],
                                 cwd=cwd, capture_output=True, text=True, check=False)
@@ -135,12 +166,15 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
 
 
 DEFAULT_REPOS = [
+    "Malakof/crystal-capabilities",
     "Malakof/crystal-dark-factory-poc",
     "Malakof/crystal-dark-factory-target-lab",
     "Malakof/crystal-discord-bot",
     "Malakof/crystal-specs",
     "Malakof/crystal-assistant-ui-poc",
     "Malakof/crystal-company",
+    "Malakof/crystal-compta",
+    "Malakof/crystal-dark-factory-hermes",
 ]
 
 
@@ -152,7 +186,7 @@ def main() -> int:
                         help="Comma-separated explicit list. Defaults to the 6 Crystal governed repos.")
     parser.add_argument("--include-prefix", default=None,
                         help="Optional glob prefix override (legacy mode).")
-    parser.add_argument("--exclude-suffix", default="-test,-scratch,-compta")
+    parser.add_argument("--exclude-suffix", default="-test,-scratch")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 

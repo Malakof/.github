@@ -1,10 +1,13 @@
 name: "Mission intake — dark factory candidate"
 description: "Issue candidate for ingestion as a Crystal mission by the dark factory."
-title: "intake: "
+title: "feature: "
 labels:
+  - "type:feature"
+  - "priority:p2"
   - "crystal:intake"
+  - "crystal:backlog"
   - "mission:not-imported"
-  - "status:triage"
+  - "status:needs-triage"
 body:
   - type: markdown
     attributes:

@@ -78,21 +78,27 @@ categories:
     applies_to: all
     emitted_by: [human, kernel, dark-factory]
     labels:
-      - name: status:triage
+      - name: status:needs-triage
         color: D4C5F9
         description: "To be evaluated before pickup."
-      - name: status:ready
+      - name: status:needs-info
+        color: f9d0c4
+        description: "Waiting for clarification before pickup."
+      - name: status:ready-for-agent
         color: 0e8a16
-        description: "Definition ready, can be picked up."
+        description: "Ready for an agent to pick up."
+      - name: status:ready-for-human
+        color: 0e8a16
+        description: "Ready for a human maintainer to pick up."
       - name: status:in-progress
         color: 1f6feb
         description: "Work in progress."
       - name: status:blocked
         color: d1242f
         description: "Blocked — external dependency, decision pending."
-      - name: status:needs-human
-        color: f9d0c4
-        description: "HITL required."
+      - name: status:wontfix
+        color: ffffff
+        description: "Will not be actioned."
 
 # =============================================================================
 # 2. KERNEL — projected automatically by paperclip kernel (read-only for humans)
@@ -210,10 +216,10 @@ categories:
 # =============================================================================
 
   intake:
-    description: "Issue ingestion state by dark factory."
+    description: "Optional dark-factory intake state."
     required: false
     applies_to: all
-    emitted_by: [human, dark-factory]
+    emitted_by: [dark-factory]
     labels:
       - name: crystal:backlog
         color: 0366d6
@@ -223,7 +229,7 @@ categories:
         description: "Candidate for mission ingestion."
 
   mission_lifecycle:
-    description: "State of an imported mission."
+    description: "Optional dark-factory mission lifecycle."
     required: false
     applies_to: all
     emitted_by: [dark-factory, kernel]

@@ -3,7 +3,8 @@ description: "Parent issue orchestrating multiple sub-issues. Create children as
 title: "[EPIC] "
 labels:
   - "type:epic"
-  - "status:triage"
+  - "priority:p2"
+  - "status:needs-triage"
 body:
   - type: markdown
     attributes:

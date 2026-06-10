@@ -1,9 +1,10 @@
 name: "Feature — new functionality"
 description: "Request or proposal for a new feature."
-title: "feat: "
+title: "feature: "
 labels:
   - "type:feature"
-  - "status:triage"
+  - "priority:p2"
+  - "status:needs-triage"
 body:
   - type: textarea
     id: context

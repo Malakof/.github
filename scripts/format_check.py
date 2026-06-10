@@ -70,14 +70,24 @@ def deterministic_precheck(artifact: dict, kind: str) -> dict:
         r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
         r"(!)?(?:\(([a-z0-9._-]+)\))?: (.+)$"
     )
+    issue_re = re.compile(r"^(feature|bug|chore|docs|refactor|spike|test): (.+)$")
     epic_re = re.compile(r"^\[EPIC\] .+$")
 
     is_epic = epic_re.match(title) is not None
     cc_match = cc_re.match(title)
+    issue_match = issue_re.match(title) if kind == "issue" else None
 
-    title_format_valid = bool(cc_match) or is_epic
-    title_type = cc_match.group(1) if cc_match else ("epic" if is_epic else None)
-    title_subject = cc_match.group(4) if cc_match else (title.removeprefix("[EPIC] ") if is_epic else title)
+    title_format_valid = bool(cc_match) or bool(issue_match) or is_epic
+    title_type = (
+        cc_match.group(1)
+        if cc_match
+        else (issue_match.group(1) if issue_match else ("epic" if is_epic else None))
+    )
+    title_subject = (
+        cc_match.group(4)
+        if cc_match
+        else (issue_match.group(2) if issue_match else (title.removeprefix("[EPIC] ") if is_epic else title))
+    )
 
     subject_len_ok = len(title_subject or "") <= (80 if kind == "issue" else 72)
     subject_no_trailing_period = not (title_subject or "").endswith(".")
@@ -89,7 +99,8 @@ def deterministic_precheck(artifact: dict, kind: str) -> dict:
 
     type_label_matches_title = False
     if has_one_type and title_type:
-        type_label_matches_title = type_labels[0] == f"type:{title_type}"
+        type_map = {"feat": "feature"}
+        type_label_matches_title = type_labels[0] == f"type:{type_map.get(title_type, title_type)}"
 
     return {
         "title": title,

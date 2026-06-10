@@ -20,18 +20,31 @@ See [`labels.yaml`](./labels.yaml) for the full canonical table.
 
 - **`priority:p*`**: exactly one, mandatory.
 - **`type:*`**: exactly one, mandatory.
-- **`status:*`**: optional — `status:triage` is set by default on intake.
+- **`status:*`**: optional — use `status:needs-triage`,
+  `status:needs-info`, `status:ready-for-agent`,
+  `status:ready-for-human`, or `status:wontfix` for human-readable triage.
 - **`area:*`**: recommended, free-form `area:<domain-kebab>` if no preset matches.
 - **`release:*`**: optional, free-form `release:<milestone-kebab>`.
-- **`stream:*` / `scenario:*` / `agent:*` / `crystal:*` / `mission:*`**: per repo (see `applies_to` in `labels.yaml`).
+- **`stream:*` / `scenario:*` / `agent:*`**: per repo (see
+  `applies_to` in `labels.yaml`).
+- **`crystal:intake` / `crystal:backlog` / `mission:*`**: optional Dark
+  Factory compatibility metadata. Create these only in a Dark Factory context
+  or with explicit operator intent; do not add them to ordinary issues just to
+  satisfy governance.
 - **`crystal:agent|stage|status|runtime|mission|parent|child:*`**: EMITTED ONLY by paperclip kernel. Never set manually.
 
 ### 1.2 Conventional Commits
 
-Strict format:
+PR titles use strict Conventional Commits:
 
 ```
 <type>(<scope>)?: <subject>
+```
+
+Commit subjects use Conventional Commits with a targeted emoji:
+
+```
+<type>(<scope>)?: <emoji> <subject>
 
 [<body>]
 
@@ -44,15 +57,19 @@ Strict format:
 **Scopes**: per repo in [`scopes.yaml`](./scopes.yaml). Optional but
 recommended on repos with multiple functional domains.
 
-**Subject**: imperative present, ≤ 72 chars, no trailing period,
-lowercase first letter (unless proper noun).
+**Subject**: concise, human-readable, no trailing period.
+
+**Emoji palette**: `✨` feature, `🐛` bug fix, `📝` documentation, `♻️`
+refactor, `✅` tests, `⬆️` dependency bump, `👷` CI/build, `🔒`
+security/auth, `🚀` release/deploy, `🧹` cleanup, `⚡` performance.
 
 **Footer**:
 - `Closes #123` / `Fixes #123` for auto-close.
 - `Refs #123` for link without close.
-- `Co-authored-by: Name <email>` for co-authorship.
 - `BREAKING CHANGE: <description>` for backwards-incompatible changes
   (triggers MAJOR bump in SemVer).
+
+Do not add `Co-authored-by` footers to Crystal commits.
 
 **Sign-off**: not required unless explicitly requested per repo.
 
@@ -64,8 +81,8 @@ rejects any non-conforming title.
 **Issue**:
 - `type:epic` → prefix `[EPIC] <subject>` (the prefix is set in addition
   to the `type:epic` label for human visibility).
-- All other types → `<type>: <subject>` (imperative present subject,
-  ≤ 80 chars).
+- All other types → `<type>: <subject>` where `<type>` is one of `feature`,
+  `bug`, `chore`, `docs`, `refactor`, `spike`, `test`.
 
 **Body**: use the provided ISSUE_TEMPLATE (epic, feature, bug,
 mission-intake). Required sections: `Context`, `Acceptance criteria`,
@@ -100,6 +117,12 @@ not a `- [ ]` line in the body.
 
 **Constraints**: kebab-case, ≤ 60 chars total, no double separators,
 no spaces. Default branch remains `main`.
+
+Branches and PRs are optional delivery structure. Direct `main` delivery is
+allowed for solo work, small trusted changes, documentation, governance
+maintenance, local cleanups, or when explicitly requested. Every delivery mode
+keeps the same evidence rule: inspect status, preserve unrelated changes, stage
+only intended files, use the commit-message format, and report validation.
 
 ### 2.2 Tags
 
@@ -138,6 +161,9 @@ Format: `<REPO_PREFIX>-<TYPE>-<NUM>`
 | `crystal-discord-bot` | `BEACON` (historical codename) |
 | `crystal-specs` | `SPEC` |
 | `crystal-company` | `COMP` |
+| `crystal-capabilities` | `CAP` |
+| `crystal-compta` | `COMPTA` |
+| `crystal-dark-factory-hermes` | `HERMES` |
 
 **Types**: `FEAT`, `BUG`, `SPIKE`, `DOC`, `MIGR`, `OPS`.
 **Num**: 3-digit zero-padded, allocated sequentially per repo.
@@ -248,7 +274,7 @@ inactivity.
   PR on each Crystal repo pinning an older version.
 - **governance-check CI**: reusable workflow called from each repo to
   verify (a) `governance_version` exists in `.github`, (b) labels are in
-  sync, (c) templates are not overridden locally.
+  sync, (c) pushed commit messages follow the Crystal emoji commit format.
 
 ---
 
