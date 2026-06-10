@@ -9,6 +9,7 @@ Usage:
     python scripts/sync-labels.py --repo <owner>/<name>
     python scripts/sync-labels.py --repo <owner>/<name> --check-only
     python scripts/sync-labels.py --repo <owner>/<name> --check-only --allow-extra-labels
+    python scripts/sync-labels.py --repo <owner>/<name> --include-dark-factory-labels
     python scripts/sync-labels.py --repo <owner>/<name> --prune
 """
 
@@ -34,11 +35,13 @@ def fetch_existing_labels(repo: str) -> dict[str, dict[str, str]]:
     return {item["name"]: item for item in payload}
 
 
-def labels_for_repo(labels_file: Path, repo: str) -> list[dict[str, str]]:
+def labels_for_repo(labels_file: Path, repo: str, include_dark_factory_labels: bool = False) -> list[dict[str, str]]:
     data = yaml.safe_load(labels_file.read_text(encoding="utf-8"))
     repo_short = repo.split("/")[-1]
     out: list[dict[str, str]] = []
     for category in data.get("categories", {}).values():
+        if category.get("dark_factory_context") and not include_dark_factory_labels:
+            continue
         applies = category.get("applies_to", "all")
         if not applies_to_match(applies, repo_short):
             continue
@@ -120,10 +123,15 @@ def main() -> int:
         action="store_true",
         help="In check-only strict mode, tolerate existing labels outside the canonical table.",
     )
+    parser.add_argument(
+        "--include-dark-factory-labels",
+        action="store_true",
+        help="Also sync optional Dark Factory labels; use only for a Dark Factory run/repo context.",
+    )
     parser.add_argument("--prune", action="store_true", help="Delete labels not in the canonical table.")
     args = parser.parse_args()
 
-    canonical = labels_for_repo(args.labels_file, args.repo)
+    canonical = labels_for_repo(args.labels_file, args.repo, args.include_dark_factory_labels)
     existing = fetch_existing_labels(args.repo)
     drift = []
 
@@ -148,6 +156,7 @@ def main() -> int:
 
     print(json.dumps({
         "repo": args.repo,
+        "include_dark_factory_labels": args.include_dark_factory_labels,
         "applied": [d for d in drift if not d[1].startswith("would-")],
         "would_apply": [d for d in drift if d[1].startswith("would-")],
         "extra_labels": extra,

@@ -188,7 +188,6 @@ DEFAULT_REPOS = [
     "Malakof/crystal-assistant-ui-poc",
     "Malakof/crystal-company",
     "Malakof/crystal-compta",
-    "Malakof/crystal-dark-factory-hermes",
 ]
 
 

@@ -219,6 +219,7 @@ categories:
     description: "Optional dark-factory intake state."
     required: false
     applies_to: all
+    dark_factory_context: true
     emitted_by: [dark-factory]
     labels:
       - name: crystal:backlog
@@ -232,6 +233,7 @@ categories:
     description: "Optional dark-factory mission lifecycle."
     required: false
     applies_to: all
+    dark_factory_context: true
     emitted_by: [dark-factory, kernel]
     labels:
       - name: mission:not-imported

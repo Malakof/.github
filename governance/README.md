@@ -30,7 +30,8 @@ See [`labels.yaml`](./labels.yaml) for the full canonical table.
 - **`crystal:intake` / `crystal:backlog` / `mission:*`**: optional Dark
   Factory compatibility metadata. Create these only in a Dark Factory context
   or with explicit operator intent; do not add them to ordinary issues just to
-  satisfy governance.
+  satisfy governance. They are excluded from the default label sync; use
+  `sync-labels.py --include-dark-factory-labels` only for a Dark Factory run.
 - **`crystal:agent|stage|status|runtime|mission|parent|child:*`**: EMITTED ONLY by paperclip kernel. Never set manually.
 
 ### 1.2 Conventional Commits
@@ -287,6 +288,9 @@ inactivity.
 3. Run `gh workflow run governance-check.yml` to validate.
 4. Run `python scripts/sync-labels.py --repo <owner>/<repo>` from
    `Malakof/.github` to apply the canonical taxonomy.
+
+For a Dark Factory run, explicitly add `--include-dark-factory-labels` to sync
+the optional `crystal:intake`, `crystal:backlog`, and `mission:*` labels.
 
 ---
 

@@ -88,10 +88,15 @@ scopes:
     - docs
 
   crystal-compta:
-    - api
-    - data
+    - comptabilite
+    - compte-courant
+    - factures
+    - notes-de-frais
+    - recap
+    - fiscal
+    - exports
+    - scripts
     - docs
-    - infra
     - tests
 
   crystal-dark-factory-hermes:
