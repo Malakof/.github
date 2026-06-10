@@ -8,6 +8,7 @@ deletes labels that are no longer in the canonical table (--prune).
 Usage:
     python scripts/sync-labels.py --repo <owner>/<name>
     python scripts/sync-labels.py --repo <owner>/<name> --check-only
+    python scripts/sync-labels.py --repo <owner>/<name> --check-only --allow-extra-labels
     python scripts/sync-labels.py --repo <owner>/<name> --prune
 """
 
@@ -114,6 +115,11 @@ def main() -> int:
     parser.add_argument("--labels-file", default="governance/labels.yaml", type=Path)
     parser.add_argument("--check-only", action="store_true", help="Report drift, do not modify.")
     parser.add_argument("--strict", default="false", help="In check-only, exit 1 on drift.")
+    parser.add_argument(
+        "--allow-extra-labels",
+        action="store_true",
+        help="In check-only strict mode, tolerate existing labels outside the canonical table.",
+    )
     parser.add_argument("--prune", action="store_true", help="Delete labels not in the canonical table.")
     args = parser.parse_args()
 
@@ -138,15 +144,18 @@ def main() -> int:
                         check=True,
                     )
 
+    blocking_extra = extra and not args.allow_extra_labels
+
     print(json.dumps({
         "repo": args.repo,
         "applied": [d for d in drift if not d[1].startswith("would-")],
         "would_apply": [d for d in drift if d[1].startswith("would-")],
         "extra_labels": extra,
-        "ok": not drift and not extra,
+        "extra_labels_tolerated": bool(extra and args.allow_extra_labels),
+        "ok": not drift and not blocking_extra,
     }, indent=2))
 
-    if args.check_only and args.strict.lower() == "true" and (drift or extra):
+    if args.check_only and args.strict.lower() == "true" and (drift or blocking_extra):
         return 1
     return 0
 

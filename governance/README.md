@@ -275,6 +275,8 @@ inactivity.
 - **governance-check CI**: reusable workflow called from each repo to
   verify (a) `governance_version` exists in `.github`, (b) labels are in
   sync, (c) pushed commit messages follow the Crystal emoji commit format.
+  Historical extra labels are reported but tolerated; delete them only with an
+  explicit `sync-labels.py --prune` run.
 
 ---
 

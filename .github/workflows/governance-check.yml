@@ -69,7 +69,8 @@ jobs:
             --repo "${{ github.repository }}" \
             --labels-file .governance/governance/labels.yaml \
             --check-only \
-            --strict "${{ inputs.strict }}"
+            --strict "${{ inputs.strict }}" \
+            --allow-extra-labels
 
       - name: Validate pushed commit messages
         if: github.event_name == 'push'
