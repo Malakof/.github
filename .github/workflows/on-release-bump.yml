@@ -1,6 +1,6 @@
 name: on-release-bump
 # Internal workflow for Malakof/.github.
-# On every semver tag vX.Y.Z, opens a "chore: bump governance to vX.Y.Z" PR
+# On every semver tag vX.Y.Z, opens a "chore: 🧹 bump governance to vX.Y.Z" PR
 # on every Crystal repo pinning an older version.
 
 on:
@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     steps:
       - name: Checkout this repo

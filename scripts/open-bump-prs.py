@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open `chore: bump governance to vX.Y.Z` PRs across Crystal repos.
+"""Open `chore: 🧹 bump governance to vX.Y.Z` PRs across Crystal repos.
 
 Triggered by .github/workflows/on-release-bump.yml on each new tag of
 Malakof/.github. For each repo whose `.crystal-governance.yaml` pin is
@@ -23,6 +23,9 @@ from pathlib import Path
 
 PIN_FILENAME = ".crystal-governance.yaml"
 BRANCH_PREFIX = "chore/bump-governance-"
+SCRIPT_DIR = Path(__file__).resolve().parent
+LABELS_FILE = SCRIPT_DIR.parent / "governance" / "labels.yaml"
+PR_LABELS = ["type:chore", "priority:p2"]
 WORKFLOW_REF_RE = re.compile(
     r"(Malakof/\.github/\.github/workflows/[^@\s]+\.yml@)(v\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?|main)"
 )
@@ -97,6 +100,20 @@ def bump_workflow_refs(repo_path: Path, new_version: str) -> list[str]:
     return changed
 
 
+def sync_target_labels(repo: str) -> None:
+    subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT_DIR / "sync-labels.py"),
+            "--repo",
+            repo,
+            "--labels-file",
+            str(LABELS_FILE),
+        ],
+        check=True,
+    )
+
+
 def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
     branch = f"{BRANCH_PREFIX}{new_version}"
     if dry_run:
@@ -143,12 +160,12 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             cwd=cwd, check=True,
         )
         subprocess.run(["git", "push", "-u", "origin", branch], cwd=cwd, check=True)
-        # Create PR; labels are best-effort (the target repo may not have them yet).
+        sync_target_labels(repo)
         pr_args = [
             "gh", "pr", "create",
             "--repo", repo,
             "--head", branch,
-            "--title", f"chore: bump governance to {new_version}",
+            "--title", f"chore: 🧹 bump governance to {new_version}",
             "--body",
             (
                 f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}` "
@@ -157,11 +174,8 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
                 "Released from Malakof/.github."
             ),
         ]
-        result = subprocess.run(pr_args + ["--label", "type:chore", "--label", "priority:p2"],
-                                cwd=cwd, capture_output=True, text=True, check=False)
-        if result.returncode != 0:
-            # Retry without labels (target repo may not have them).
-            result = subprocess.run(pr_args, cwd=cwd, capture_output=True, text=True, check=True)
+        label_args = [arg for label in PR_LABELS for arg in ("--label", label)]
+        subprocess.run(pr_args + label_args, cwd=cwd, check=True)
     return {"repo": repo, "action": "opened", "branch": branch}
 
 
