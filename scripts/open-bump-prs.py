@@ -35,6 +35,25 @@ def bump_pr_title(version: str) -> str:
     return f"chore: 🧹 bump governance to {version}"
 
 
+def bump_pr_body(version: str, workflow_changes: list[str]) -> str:
+    updated_refs = ", ".join(workflow_changes) if workflow_changes else "none"
+    return (
+        "## Context\n\n"
+        f"Automated propagation of the governed Crystal release `{version}`. "
+        "The change updates `.crystal-governance.yaml` and reusable "
+        "`Malakof/.github` workflow refs when present.\n\n"
+        "## Acceptance criteria\n\n"
+        f"- governance pin equals `{version}`\n"
+        f"- workflow refs updated: {updated_refs}\n"
+        "- repository checks pass on the exact bump commit\n\n"
+        "## Out of scope\n\n"
+        "- product, dependency, test, retry, timeout, or selector changes\n\n"
+        "## Validation\n\n"
+        "Generated and label-synchronized by the tagged `Malakof/.github` "
+        "release workflow."
+    )
+
+
 def gh_json(args: list[str]) -> object:
     result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
     return json.loads(result.stdout) if result.stdout.strip() else None
@@ -170,13 +189,7 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             "--repo", repo,
             "--head", branch,
             "--title", bump_pr_title(new_version),
-            "--body",
-            (
-                f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}` "
-                "and updates reusable Malakof/.github workflow refs when present.\n\n"
-                f"Workflow refs updated: {', '.join(workflow_changes) if workflow_changes else 'none'}.\n\n"
-                "Released from Malakof/.github."
-            ),
+            "--body", bump_pr_body(new_version, workflow_changes),
         ]
         label_args = [arg for label in PR_LABELS for arg in ("--label", label)]
         subprocess.run(pr_args + label_args, cwd=cwd, check=True)

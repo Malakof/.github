@@ -166,6 +166,36 @@ class GovernanceTypeMappingTests(unittest.TestCase):
         )
         self.assertEqual(issues, [])
 
+        body = OPEN_BUMP_PRS.bump_pr_body(
+            "v1.4.0", [".github/workflows/enforce-conventions.yml"]
+        )
+        self.assertIn("## Context", body)
+        self.assertIn("## Acceptance criteria", body)
+        self.assertIn("## Out of scope", body)
+        self.assertIn("## Validation", body)
+
+    def test_kernel_label_provenance_is_deterministic(self) -> None:
+        base = {
+            "title": "fix: repair governance",
+            "labels": [
+                {"name": "priority:p0"},
+                {"name": "type:bug"},
+                {"name": "crystal:stage:implementation"},
+            ],
+        }
+        human = deterministic_precheck(
+            {**base, "author": {"login": "Malakof", "is_bot": False}},
+            "pr",
+            self.mapping,
+        )
+        bot = deterministic_precheck(
+            {**base, "author": {"login": "github-actions[bot]", "is_bot": True}},
+            "pr",
+            self.mapping,
+        )
+        self.assertEqual(human["manual_kernel_labels"], ["crystal:stage:implementation"])
+        self.assertEqual(bot["manual_kernel_labels"], [])
+
 
 class WorkflowRuntimeTests(unittest.TestCase):
     def test_workflows_use_node_24_action_majors(self) -> None:
