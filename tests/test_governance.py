@@ -18,7 +18,10 @@ from conventions import (  # noqa: E402
     CONVENTIONAL_TITLE_RE,
     load_title_type_map,
 )
-from format_check import deterministic_precheck  # noqa: E402
+from format_check import (  # noqa: E402
+    deterministic_precheck,
+    qualitative_review_instructions,
+)
 from validate_labels import validate_label_names  # noqa: E402
 
 
@@ -195,6 +198,22 @@ class GovernanceTypeMappingTests(unittest.TestCase):
         )
         self.assertEqual(human["manual_kernel_labels"], ["crystal:stage:implementation"])
         self.assertEqual(bot["manual_kernel_labels"], [])
+
+    def test_qualitative_review_is_scoped_by_artifact_kind(self) -> None:
+        pr_instructions = qualitative_review_instructions("pr", "fix")
+        self.assertIn("Do not require issue-template headings", pr_instructions)
+        self.assertIn("Sub-issue tracking is not applicable", pr_instructions)
+        self.assertIn("Acceptance-criteria checklists are allowed", pr_instructions)
+
+        issue_instructions = qualitative_review_instructions("issue", "bug")
+        self.assertIn("explicit Context, Scope, Out of scope", issue_instructions)
+        self.assertIn("Sub-issue tracking is not applicable", issue_instructions)
+
+        epic_instructions = qualitative_review_instructions("issue", "epic")
+        self.assertIn("EPIC child tracking", epic_instructions)
+        self.assertIn("`- [ ] #N`", epic_instructions)
+        self.assertIn("prefer GitHub native sub-issues", epic_instructions)
+        self.assertNotIn("Sub-issue tracking is not applicable", epic_instructions)
 
 
 class WorkflowRuntimeTests(unittest.TestCase):

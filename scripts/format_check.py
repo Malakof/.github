@@ -137,18 +137,51 @@ def deterministic_precheck(
     }
 
 
+def qualitative_review_instructions(kind: str, title_type: str | None) -> str:
+    if kind == "pr":
+        body_instruction = (
+            "- PR body completeness: expect a summary, linked issue or context, "
+            "validation evidence, and rollout or risk notes when relevant. Do not "
+            "require issue-template headings."
+        )
+    else:
+        body_instruction = (
+            "- Issue body completeness: expect explicit Context, Scope, Out of scope, "
+            "Acceptance criteria, and Validation sections."
+        )
+
+    if kind == "issue" and title_type == "epic":
+        tracking_instruction = (
+            "- EPIC child tracking: warn when the body mirrors child issue references "
+            "as Markdown tracking entries such as `- [ ] #N`; prefer GitHub native "
+            "sub-issues. Acceptance-criteria checklists that do not track child issues "
+            "are allowed."
+        )
+    else:
+        tracking_instruction = (
+            "- Sub-issue tracking is not applicable to this artifact. Do not request "
+            "GitHub native sub-issues or a Markdown child-tracking checklist. "
+            "Acceptance-criteria checklists are allowed."
+        )
+
+    return f"{body_instruction}\n{tracking_instruction}"
+
+
 def build_prompts(governance: dict[str, object], artifact: dict, kind: str, repo: str) -> tuple[str, str]:
     title_type_map = governance["title_type_map"]
     if not isinstance(title_type_map, dict):
         raise ValueError("governance title_type_map is not an object")
     precheck = deterministic_precheck(artifact, kind, title_type_map)
+    qualitative_instructions = qualitative_review_instructions(
+        kind,
+        precheck["title_type"] if isinstance(precheck["title_type"], str) else None,
+    )
     system = (
         "You are Crystal Governance Validator, a qualitative reviewer for GitHub artifacts in the Crystal team. "
         "You receive (a) the canonical conventions, (b) the artifact, and (c) a deterministic mechanical pre-check that has ALREADY validated title format, label presence, type matching, subject length, and kernel-label provenance. "
         "TRUST THE PRE-CHECK as ground truth: do not re-validate items the pre-check has marked valid. Do not contradict the pre-check.\n\n"
         "Your job is to add QUALITATIVE findings that the deterministic check cannot catch:\n"
-        "- Body completeness: issues should have Context, Acceptance criteria, Out of scope sections.\n"
-        "- Markdown checklist for sub-issues (`- [ ] #N`) — warn, prefer GitHub native sub-issues.\n"
+        f"{qualitative_instructions}\n"
         "- Subject style: imperative present mood, ambiguous wording, jargon mismatch with body.\n"
         "- Body inconsistencies (acceptance criteria vague, no measurable conditions, contradictions).\n"
         "- Wrong scope choice when a more specific scope exists.\n\n"
