@@ -25,6 +25,13 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from conventions import (
+    CONVENTIONAL_TITLE_RE,
+    EPIC_TITLE_RE,
+    ISSUE_TITLE_RE,
+    load_title_type_map,
+)
+
 ENDPOINT = "https://models.github.ai/inference/chat/completions"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 COMMENT_MARKER = "<!-- crystal-format-check -->"
@@ -39,11 +46,13 @@ def gh_json(args: list[str]) -> object:
     return json.loads(result.stdout)
 
 
-def load_governance(governance_root: Path) -> dict[str, str]:
+def load_governance(governance_root: Path) -> dict[str, object]:
+    labels_path = governance_root / "governance" / "labels.yaml"
     pieces = {
-        "labels_yaml": (governance_root / "governance" / "labels.yaml").read_text(encoding="utf-8"),
+        "labels_yaml": labels_path.read_text(encoding="utf-8"),
         "scopes_yaml": (governance_root / "governance" / "scopes.yaml").read_text(encoding="utf-8"),
         "skill_md": (governance_root / "skills" / "crystal-github-conventions" / "SKILL.md").read_text(encoding="utf-8"),
+        "title_type_map": load_title_type_map(labels_path),
     }
     return pieces
 
@@ -59,34 +68,23 @@ def fetch_artifact(repo: str, number: int, kind: str) -> dict:
     return payload if isinstance(payload, dict) else {}
 
 
-def deterministic_precheck(artifact: dict, kind: str) -> dict:
+def deterministic_precheck(
+    artifact: dict, kind: str, title_type_map: dict[str, str]
+) -> dict:
     """Run mechanical checks before sending to the LLM. Returns a dict the LLM
     can trust as ground truth."""
-    import re
     title = (artifact.get("title") or "").strip()
     label_names = {item.get("name") for item in (artifact.get("labels") or []) if isinstance(item, dict)}
 
-    cc_re = re.compile(
-        r"^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
-        r"(!)?(?:\(([a-z0-9._-]+)\))?: (.+)$"
-    )
-    issue_re = re.compile(r"^(feature|bug|chore|docs|refactor|spike|test): (.+)$")
-    epic_re = re.compile(r"^\[EPIC\] .+$")
+    conventional_match = CONVENTIONAL_TITLE_RE.match(title) if kind == "pr" else None
+    issue_match = ISSUE_TITLE_RE.match(title) if kind == "issue" else None
+    epic_match = EPIC_TITLE_RE.match(title) if kind == "issue" else None
 
-    is_epic = epic_re.match(title) is not None
-    cc_match = cc_re.match(title)
-    issue_match = issue_re.match(title) if kind == "issue" else None
-
-    title_format_valid = bool(cc_match) or bool(issue_match) or is_epic
-    title_type = (
-        cc_match.group(1)
-        if cc_match
-        else (issue_match.group(1) if issue_match else ("epic" if is_epic else None))
-    )
-    title_subject = (
-        cc_match.group(4)
-        if cc_match
-        else (issue_match.group(2) if issue_match else (title.removeprefix("[EPIC] ") if is_epic else title))
+    title_format_valid = bool(conventional_match or issue_match or epic_match)
+    match = conventional_match or issue_match
+    title_type = match.group("type") if match else ("epic" if epic_match else None)
+    title_subject = match.group("subject") if match else (
+        epic_match.group("subject") if epic_match else title
     )
 
     subject_len_ok = len(title_subject or "") <= (80 if kind == "issue" else 72)
@@ -97,10 +95,10 @@ def deterministic_precheck(artifact: dict, kind: str) -> dict:
     has_one_priority = len(priority_labels) == 1
     has_one_type = len(type_labels) == 1
 
-    type_label_matches_title = False
-    if has_one_type and title_type:
-        type_map = {"feat": "feature"}
-        type_label_matches_title = type_labels[0] == f"type:{type_map.get(title_type, title_type)}"
+    expected_type_label = title_type_map.get(title_type) if title_type else None
+    type_label_matches_title = bool(
+        has_one_type and expected_type_label and type_labels[0] == expected_type_label
+    )
 
     return {
         "title": title,
@@ -113,13 +111,17 @@ def deterministic_precheck(artifact: dict, kind: str) -> dict:
         "type_labels": type_labels,
         "has_one_priority": has_one_priority,
         "has_one_type": has_one_type,
+        "expected_type_label": expected_type_label,
         "type_label_matches_title": type_label_matches_title,
         "all_labels": sorted(label_names),
     }
 
 
-def build_prompts(governance: dict[str, str], artifact: dict, kind: str, repo: str) -> tuple[str, str]:
-    precheck = deterministic_precheck(artifact, kind)
+def build_prompts(governance: dict[str, object], artifact: dict, kind: str, repo: str) -> tuple[str, str]:
+    title_type_map = governance["title_type_map"]
+    if not isinstance(title_type_map, dict):
+        raise ValueError("governance title_type_map is not an object")
+    precheck = deterministic_precheck(artifact, kind, title_type_map)
     system = (
         "You are Crystal Governance Validator, a qualitative reviewer for GitHub artifacts in the Crystal team. "
         "You receive (a) the canonical conventions, (b) the artifact, and (c) a deterministic mechanical pre-check that has ALREADY validated title format, label presence, type matching, and subject length. "

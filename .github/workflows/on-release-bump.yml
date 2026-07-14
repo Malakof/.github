@@ -17,7 +17,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout this repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Skip if CRYSTAL_GITHUB_PAT secret is missing
         id: precheck

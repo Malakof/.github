@@ -7,18 +7,12 @@ Used by .github/workflows/enforce-conventions.yml.
 from __future__ import annotations
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
 import yaml
 
-CONVENTIONAL_RE = re.compile(
-    r"^(?P<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
-    r"(?P<bang>!)?"
-    r"(?:\((?P<scope>[a-z0-9._-]+)\))?"
-    r": (?P<subject>.+)$"
-)
+from conventions import CONVENTIONAL_TITLE_RE
 
 
 def main() -> int:
@@ -32,7 +26,7 @@ def main() -> int:
     blocking = args.blocking.lower() == "true"
     title = args.title.strip()
 
-    match = CONVENTIONAL_RE.match(title)
+    match = CONVENTIONAL_TITLE_RE.match(title)
     if not match:
         msg = (
             f"Title '{title}' does not match Conventional Commits "

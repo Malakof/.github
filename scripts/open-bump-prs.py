@@ -31,6 +31,10 @@ WORKFLOW_REF_RE = re.compile(
 )
 
 
+def bump_pr_title(version: str) -> str:
+    return f"chore: 🧹 bump governance to {version}"
+
+
 def gh_json(args: list[str]) -> object:
     result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
     return json.loads(result.stdout) if result.stdout.strip() else None
@@ -156,7 +160,7 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
         if diff_check.returncode == 0:
             return {"repo": repo, "action": "skipped", "current": new_version, "branch": branch}
         subprocess.run(
-            ["git", "commit", "-m", f"chore: 🧹 bump governance to {new_version}"],
+            ["git", "commit", "-m", bump_pr_title(new_version)],
             cwd=cwd, check=True,
         )
         subprocess.run(["git", "push", "-u", "origin", branch], cwd=cwd, check=True)
@@ -165,7 +169,7 @@ def open_bump_pr(repo: str, new_version: str, dry_run: bool) -> dict[str, str]:
             "gh", "pr", "create",
             "--repo", repo,
             "--head", branch,
-            "--title", f"chore: 🧹 bump governance to {new_version}",
+            "--title", bump_pr_title(new_version),
             "--body",
             (
                 f"Auto-generated PR. Bumps `.crystal-governance.yaml` to `{new_version}` "

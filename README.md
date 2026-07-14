@@ -3,7 +3,7 @@
 Single source of truth for Crystal team GitHub conventions:
 labels, issue/PR templates, naming, reusable workflows, agent skill.
 
-**Current version**: `v1.1.0` (see `.crystal-governance.yaml`).
+**Current version**: `v1.4.0` (see `.crystal-governance.yaml`).
 
 ## For humans
 
@@ -34,7 +34,7 @@ Add to the target repo:
 1. `.crystal-governance.yaml`:
    ```yaml
    schema: crystal-governance-pin/v1
-   governance_version: v1.1.0
+   governance_version: v1.4.0
    source: Malakof/.github
    ```
 
@@ -44,7 +44,7 @@ Add to the target repo:
    on: [push, pull_request]
    jobs:
      check:
-       uses: Malakof/.github/.github/workflows/governance-check.yml@v1.1.0
+       uses: Malakof/.github/.github/workflows/governance-check.yml@v1.4.0
    ```
 
 3. `.github/workflows/enforce-conventions.yml`:
@@ -53,7 +53,7 @@ Add to the target repo:
    on: [pull_request]
    jobs:
      enforce:
-       uses: Malakof/.github/.github/workflows/enforce-conventions.yml@v1.1.0
+       uses: Malakof/.github/.github/workflows/enforce-conventions.yml@v1.4.0
    ```
 
 4. Run label sync:

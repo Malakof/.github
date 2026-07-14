@@ -14,10 +14,39 @@ from pathlib import Path
 
 import yaml
 
+from conventions import CONVENTIONAL_TITLE_RE, load_title_type_map
+
 
 def gh_json(args: list[str]) -> object:
     result = subprocess.run(["gh"] + args, capture_output=True, text=True, check=True)
     return json.loads(result.stdout) if result.stdout.strip() else None
+
+
+def validate_label_names(
+    label_names: set[str], title: str, title_type_map: dict[str, str]
+) -> tuple[list[str], list[str], list[str]]:
+    issues: list[str] = []
+
+    priority_labels = sorted(name for name in label_names if name.startswith("priority:p"))
+    if len(priority_labels) != 1:
+        issues.append(
+            f"Expected exactly one priority:p* label, got {priority_labels or 'none'}."
+        )
+
+    type_labels = sorted(name for name in label_names if name.startswith("type:"))
+    if len(type_labels) != 1:
+        issues.append(f"Expected exactly one type:* label, got {type_labels or 'none'}.")
+
+    match = CONVENTIONAL_TITLE_RE.match(title.strip())
+    if match and len(type_labels) == 1:
+        title_type = match.group("type")
+        expected_type = title_type_map[title_type]
+        if type_labels[0] != expected_type:
+            issues.append(
+                f"Expected type label {expected_type!r} to match PR title type "
+                f"{title_type!r}, got {type_labels[0]!r}."
+            )
+    return issues, priority_labels, type_labels
 
 
 def main() -> int:
@@ -38,34 +67,20 @@ def main() -> int:
     ]) or {}
     label_names = {label["name"] for label in payload.get("labels", [])}  # type: ignore[index]
 
-    issues: list[str] = []
-
-    priority_labels = [name for name in label_names if name.startswith("priority:p")]
-    if len(priority_labels) != 1:
-        issues.append(
-            f"Expected exactly one priority:p* label, got {sorted(priority_labels) or 'none'}."
-        )
-
-    type_labels = [name for name in label_names if name.startswith("type:")]
-    if len(type_labels) != 1:
-        issues.append(
-            f"Expected exactly one type:* label, got {sorted(type_labels) or 'none'}."
-        )
-
-    type_from_title = None
     pr_payload = gh_json([
         "pr", "view", str(args.pr),
         "--repo", args.repo,
         "--json", "title",
     ]) or {}
     title = pr_payload.get("title", "") if isinstance(pr_payload, dict) else ""
-    if ":" in title:
-        type_from_title = title.split(":", 1)[0].split("(", 1)[0].rstrip("!")
-    type_map = {"feat": "feature"}
-    if type_from_title:
-        expected_type = f"type:{type_map.get(type_from_title, type_from_title)}"
-        if len(type_labels) == 1 and type_labels[0] != expected_type:
-            issues.append(f"Expected type label {expected_type!r} to match PR title, got {type_labels[0]!r}.")
+    try:
+        title_type_map = load_title_type_map(args.labels_file)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"::{severity}::Invalid title type mapping: {type(exc).__name__}: {exc}")
+        return 1 if blocking else 0
+    issues, priority_labels, type_labels = validate_label_names(
+        label_names, title, title_type_map
+    )
 
     # Enforce kernel-only namespace: if a kernel label is set, warn. The workflow
     # cannot reliably distinguish kernel projection from human application.
