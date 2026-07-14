@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -35,6 +36,9 @@ def load_script_module(name: str, filename: str):
 
 
 OPEN_BUMP_PRS = load_script_module("open_bump_prs", "open-bump-prs.py")
+VALIDATE_COMMITS = load_script_module(
+    "validate_commit_messages", "validate_commit_messages.py"
+)
 LABELS_FILE = REPO_ROOT / "governance" / "labels.yaml"
 
 EXPECTED_PR_MAPPING = {
@@ -230,6 +234,76 @@ class WorkflowRuntimeTests(unittest.TestCase):
                 self.assertNotIn("actions/setup-python@v5", content)
         self.assertIn("actions/checkout@v5", contents["test.yml"])
         self.assertIn("actions/setup-python@v6", contents["test.yml"])
+
+
+class PushRevisionRangeTests(unittest.TestCase):
+    def test_new_branch_has_no_incremental_range(self) -> None:
+        self.assertIsNone(
+            VALIDATE_COMMITS.push_revision_range(
+                before=VALIDATE_COMMITS.ZERO_SHA,
+                after="a" * 40,
+                ref_name="feature",
+                default_branch="main",
+            )
+        )
+
+    @patch.object(VALIDATE_COMMITS, "is_ancestor", return_value=True)
+    @patch.object(VALIDATE_COMMITS, "commit_exists", return_value=True)
+    def test_fast_forward_push_uses_incremental_range(
+        self, _exists, _ancestor
+    ) -> None:
+        before = "b" * 40
+        after = "a" * 40
+        self.assertEqual(
+            VALIDATE_COMMITS.push_revision_range(
+                before=before,
+                after=after,
+                ref_name="feature",
+                default_branch="main",
+            ),
+            f"{before}..{after}",
+        )
+
+    @patch.object(VALIDATE_COMMITS, "git", return_value="c" * 40 + "\n")
+    @patch.object(VALIDATE_COMMITS, "is_ancestor", return_value=False)
+    @patch.object(VALIDATE_COMMITS, "commit_exists", return_value=True)
+    def test_rebased_feature_push_uses_default_branch_merge_base(
+        self, _exists, _ancestor, merge_base
+    ) -> None:
+        after = "a" * 40
+        self.assertEqual(
+            VALIDATE_COMMITS.push_revision_range(
+                before="b" * 40,
+                after=after,
+                ref_name="codex/rebased-feature",
+                default_branch="main",
+            ),
+            f"{'c' * 40}..{after}",
+        )
+        merge_base.assert_called_once_with(["merge-base", after, "origin/main"])
+
+    @patch.object(VALIDATE_COMMITS, "is_ancestor", return_value=False)
+    @patch.object(VALIDATE_COMMITS, "commit_exists", return_value=True)
+    def test_non_fast_forward_default_branch_fails_closed(
+        self, _exists, _ancestor
+    ) -> None:
+        with self.assertRaisesRegex(ValueError, "default branch 'main'"):
+            VALIDATE_COMMITS.push_revision_range(
+                before="b" * 40,
+                after="a" * 40,
+                ref_name="main",
+                default_branch="main",
+            )
+
+    @patch.object(VALIDATE_COMMITS, "commit_exists", return_value=False)
+    def test_missing_pushed_commit_fails_closed(self, _exists) -> None:
+        with self.assertRaisesRegex(ValueError, "unavailable after checkout"):
+            VALIDATE_COMMITS.push_revision_range(
+                before="b" * 40,
+                after="a" * 40,
+                ref_name="feature",
+                default_branch="main",
+            )
 
 
 if __name__ == "__main__":

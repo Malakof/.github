@@ -89,6 +89,11 @@ Do not add `Co-authored-by` footers to Crystal commits.
 
 **Sign-off**: not required unless explicitly requested per repo.
 
+**Push validation range**: fast-forward updates validate `before..after`.
+After a rebased feature-branch push, the workflow validates every commit from
+the current default-branch merge base through the pushed head. A non-fast-forward
+update of the default branch fails closed.
+
 ### 1.3 PR and issue titles
 
 **PR**: strict Conventional Commits. The `enforce-conventions` workflow

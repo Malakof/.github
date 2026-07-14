@@ -31,10 +31,64 @@ MERGE_SUBJECTS = (
     "Revert \"Merge ",
 )
 
+ZERO_SHA = "0" * 40
+
 
 def git(args: list[str]) -> str:
     result = subprocess.run(["git"] + args, capture_output=True, text=True, check=True)
     return result.stdout
+
+
+def commit_exists(sha: str) -> bool:
+    result = subprocess.run(
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def is_ancestor(older: str, newer: str) -> bool:
+    result = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", older, newer],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def push_revision_range(
+    *,
+    before: str,
+    after: str,
+    ref_name: str,
+    default_branch: str,
+) -> str | None:
+    if before == ZERO_SHA:
+        return None
+    if not commit_exists(after):
+        raise ValueError(f"Pushed commit {after} is unavailable after checkout")
+    if commit_exists(before) and is_ancestor(before, after):
+        return f"{before}..{after}"
+    if ref_name == default_branch:
+        raise ValueError(
+            f"Refusing non-fast-forward validation on default branch {default_branch!r}"
+        )
+
+    default_ref = f"origin/{default_branch}"
+    try:
+        base = git(["merge-base", after, default_ref]).strip()
+    except subprocess.CalledProcessError as exc:
+        raise ValueError(
+            f"Cannot resolve merge base between pushed commit {after} and {default_ref}"
+        ) from exc
+    if not base:
+        raise ValueError(
+            f"Empty merge base between pushed commit {after} and {default_ref}"
+        )
+    return f"{base}..{after}"
 
 
 def allowed_scopes(scopes_file: Path, repo: str) -> set[str]:
@@ -64,11 +118,49 @@ def is_merge_commit(sha: str, subject: str) -> bool:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--rev-range", required=True)
+    range_group = parser.add_mutually_exclusive_group(required=True)
+    range_group.add_argument("--rev-range")
+    range_group.add_argument("--push-before")
+    parser.add_argument("--push-after")
+    parser.add_argument("--ref-name")
+    parser.add_argument("--default-branch")
     parser.add_argument("--repo", required=True, help="<owner>/<name>")
     parser.add_argument("--scopes-file", type=Path, required=True)
     parser.add_argument("--blocking", default="true")
     args = parser.parse_args()
+
+    rev_range = args.rev_range
+    if args.push_before is not None:
+        missing = [
+            name
+            for name, value in (
+                ("--push-after", args.push_after),
+                ("--ref-name", args.ref_name),
+                ("--default-branch", args.default_branch),
+            )
+            if not value
+        ]
+        if missing:
+            parser.error(f"required with --push-before: {', '.join(missing)}")
+        try:
+            rev_range = push_revision_range(
+                before=args.push_before,
+                after=args.push_after,
+                ref_name=args.ref_name,
+                default_branch=args.default_branch,
+            )
+        except ValueError as exc:
+            print(f"::error::{exc}")
+            return 1
+        if rev_range is None:
+            print(
+                "::notice::Skipping pushed commit validation for new branch creation; "
+                "PR validation checks base..HEAD."
+            )
+            return 0
+
+    if rev_range is None:
+        parser.error("a revision range is required")
 
     blocking = args.blocking.lower() == "true"
     severity = "error" if blocking else "warning"
@@ -76,7 +168,7 @@ def main() -> int:
     issues: list[str] = []
     checked = 0
 
-    for sha, subject, body in commits(args.rev_range):
+    for sha, subject, body in commits(rev_range):
         if is_merge_commit(sha, subject):
             continue
         checked += 1
