@@ -281,7 +281,7 @@ inactivity.
 
   ```yaml
   schema: crystal-governance-pin/v1
-  governance_version: v1.4.0
+  governance_version: v1.4.1
   source: Malakof/.github
   ```
 

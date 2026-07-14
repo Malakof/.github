@@ -35,6 +35,13 @@ from conventions import (
 ENDPOINT = "https://models.github.ai/inference/chat/completions"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 COMMENT_MARKER = "<!-- crystal-format-check -->"
+KERNEL_LABEL_PREFIXES = (
+    "crystal:agent:",
+    "crystal:stage:",
+    "crystal:status:",
+    "crystal:runtime:",
+)
+KERNEL_LABELS = {"crystal:mission", "crystal:parent", "crystal:child"}
 
 
 def gh_json(args: list[str]) -> object:
@@ -58,9 +65,8 @@ def load_governance(governance_root: Path) -> dict[str, object]:
 
 
 def fetch_artifact(repo: str, number: int, kind: str) -> dict:
-    fields = "title,body,labels,number,url"
+    fields = "title,body,labels,number,url,author"
     if kind == "pr":
-        fields += ",author"
         cmd = ["pr", "view", str(number), "--repo", repo, "--json", fields]
     else:
         cmd = ["issue", "view", str(number), "--repo", repo, "--json", fields]
@@ -95,6 +101,16 @@ def deterministic_precheck(
     has_one_priority = len(priority_labels) == 1
     has_one_type = len(type_labels) == 1
 
+    author = artifact.get("author") if isinstance(artifact.get("author"), dict) else {}
+    author_login = str(author.get("login") or "")
+    author_is_bot = bool(author.get("is_bot")) or author_login.endswith("[bot]")
+    kernel_labels = sorted(
+        name
+        for name in label_names
+        if name in KERNEL_LABELS or name.startswith(KERNEL_LABEL_PREFIXES)
+    )
+    manual_kernel_labels = [] if author_is_bot else kernel_labels
+
     expected_type_label = title_type_map.get(title_type) if title_type else None
     type_label_matches_title = bool(
         has_one_type and expected_type_label and type_labels[0] == expected_type_label
@@ -111,6 +127,10 @@ def deterministic_precheck(
         "type_labels": type_labels,
         "has_one_priority": has_one_priority,
         "has_one_type": has_one_type,
+        "author_login": author_login,
+        "author_is_bot": author_is_bot,
+        "kernel_labels": kernel_labels,
+        "manual_kernel_labels": manual_kernel_labels,
         "expected_type_label": expected_type_label,
         "type_label_matches_title": type_label_matches_title,
         "all_labels": sorted(label_names),
@@ -124,12 +144,11 @@ def build_prompts(governance: dict[str, object], artifact: dict, kind: str, repo
     precheck = deterministic_precheck(artifact, kind, title_type_map)
     system = (
         "You are Crystal Governance Validator, a qualitative reviewer for GitHub artifacts in the Crystal team. "
-        "You receive (a) the canonical conventions, (b) the artifact, and (c) a deterministic mechanical pre-check that has ALREADY validated title format, label presence, type matching, and subject length. "
+        "You receive (a) the canonical conventions, (b) the artifact, and (c) a deterministic mechanical pre-check that has ALREADY validated title format, label presence, type matching, subject length, and kernel-label provenance. "
         "TRUST THE PRE-CHECK as ground truth: do not re-validate items the pre-check has marked valid. Do not contradict the pre-check.\n\n"
         "Your job is to add QUALITATIVE findings that the deterministic check cannot catch:\n"
         "- Body completeness: issues should have Context, Acceptance criteria, Out of scope sections.\n"
         "- Markdown checklist for sub-issues (`- [ ] #N`) — warn, prefer GitHub native sub-issues.\n"
-        "- Manual setting of kernel-projected labels (crystal:agent|stage|status|runtime|mission|parent|child:*) when the author is human (warn).\n"
         "- Subject style: imperative present mood, ambiguous wording, jargon mismatch with body.\n"
         "- Body inconsistencies (acceptance criteria vague, no measurable conditions, contradictions).\n"
         "- Wrong scope choice when a more specific scope exists.\n\n"
@@ -166,6 +185,15 @@ def build_prompts(governance: dict[str, object], artifact: dict, kind: str, repo
     if not precheck["subject_no_trailing_period"]:
         pre_fail_summary.append({"rule": "Subject style", "severity": "warn",
                                  "message": "Subject ends with a period, drop it."})
+    if precheck["manual_kernel_labels"]:
+        pre_fail_summary.append({
+            "rule": "Kernel label provenance",
+            "severity": "warn",
+            "message": (
+                f"Human author {precheck['author_login']!r} carries kernel-only labels "
+                f"{precheck['manual_kernel_labels']}."
+            ),
+        })
 
     user = (
         f"Repository: {repo}\n"
