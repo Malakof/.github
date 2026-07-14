@@ -4,19 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 
-COMMIT_RE = re.compile(
-    r"^(?P<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)"
-    r"(?P<bang>!)?"
-    r"(?:\((?P<scope>[a-z0-9._-]+)\))?"
-    r": (?P<emoji>\S+) (?P<subject>.+)$"
-)
+from conventions import CONVENTIONAL_COMMIT_RE
 
 ALLOWED_EMOJIS = {
     "✨",
@@ -86,7 +80,7 @@ def main() -> int:
         if is_merge_commit(sha, subject):
             continue
         checked += 1
-        match = COMMIT_RE.match(subject)
+        match = CONVENTIONAL_COMMIT_RE.match(subject)
         if not match:
             issues.append(
                 f"{sha[:12]} subject must match '<type>(<scope>)?: <emoji> <subject>': {subject!r}"

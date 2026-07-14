@@ -6,7 +6,7 @@ versioned by semver tags, propagated to target repos via the pin file
 `.crystal-governance.yaml` and `crystal-company/builders/sync_repo_surface.py`.
 
 **Schema**: `crystal-governance/v1`
-**Version**: 1.0.0
+**Version**: 1.1.0
 
 ---
 
@@ -54,6 +54,21 @@ Commit subjects use Conventional Commits with a targeted emoji:
 
 **Allowed types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`,
 `test`, `build`, `ci`, `chore`, `revert`.
+
+PR title types map deterministically to the functional `type:*` taxonomy:
+
+| PR title type | Required label |
+|---|---|
+| `feat` | `type:feature` |
+| `fix`, `revert` | `type:bug` |
+| `docs` | `type:docs` |
+| `refactor`, `perf` | `type:refactor` |
+| `test` | `type:test` |
+| `style`, `build`, `ci`, `chore` | `type:chore` |
+
+The map records the modal meaning of each Conventional Commit type. Use
+`fix:` for a performance regression and `chore:` for a non-remedial withdrawal
+when the modal `perf:` or `revert:` mapping would misclassify the delivery.
 
 **Scopes**: per repo in [`scopes.yaml`](./scopes.yaml). Optional but
 recommended on repos with multiple functional domains.
@@ -266,7 +281,7 @@ inactivity.
 
   ```yaml
   schema: crystal-governance-pin/v1
-  governance_version: v1.0.0
+  governance_version: v1.4.0
   source: Malakof/.github
   ```
 

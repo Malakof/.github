@@ -83,6 +83,16 @@ Do not add `Co-authored-by` footers.
 Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
 `build`, `ci`, `chore`, `revert`. Scopes per repo come from `scopes.yaml`.
 
+PR title types map to the required functional label as follows:
+
+- `feat` → `type:feature`; `fix` and `revert` → `type:bug`;
+- `docs` → `type:docs`; `refactor` and `perf` → `type:refactor`;
+- `test` → `type:test`;
+- `style`, `build`, `ci`, and `chore` → `type:chore`.
+
+Use `fix:` for a performance regression and `chore:` for a non-remedial
+withdrawal when the modal `perf:` or `revert:` mapping would be misleading.
+
 ### Issue titles
 
 - `type:epic` → `[EPIC] <subject>`

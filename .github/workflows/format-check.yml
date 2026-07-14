@@ -42,7 +42,7 @@ jobs:
       models: read
     steps:
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
@@ -57,7 +57,7 @@ jobs:
           fi
 
       - name: Checkout governance at pin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: Malakof/.github
           path: .governance
