@@ -75,16 +75,11 @@ jobs:
       - name: Validate pushed commit messages
         if: github.event_name == 'push'
         run: |
-          BEFORE="${{ github.event.before }}"
-          AFTER="${{ github.sha }}"
-          if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            echo "::notice::Skipping pushed commit validation for new branch creation; PR validation checks base..HEAD."
-            exit 0
-          else
-            RANGE="${BEFORE}..${AFTER}"
-          fi
           python3 .governance/scripts/validate_commit_messages.py \
-            --rev-range "$RANGE" \
+            --push-before "${{ github.event.before }}" \
+            --push-after "${{ github.sha }}" \
+            --ref-name "${{ github.ref_name }}" \
+            --default-branch "${{ github.event.repository.default_branch }}" \
             --repo "${{ github.repository }}" \
             --scopes-file .governance/governance/scopes.yaml \
             --blocking "${{ inputs.strict }}"
