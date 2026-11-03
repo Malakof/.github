@@ -17,10 +17,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -35,6 +37,8 @@ from conventions import (
 ENDPOINT = "https://models.github.ai/inference/chat/completions"
 DEFAULT_MODEL = "openai/gpt-4o-mini"
 COMMENT_MARKER = "<!-- crystal-format-check -->"
+LLM_ATTEMPTS = 3
+RETRYABLE_HTTP = {408, 429, 500, 502, 503, 504}
 KERNEL_LABEL_PREFIXES = (
     "crystal:agent:",
     "crystal:stage:",
@@ -240,6 +244,54 @@ def build_prompts(governance: dict[str, object], artifact: dict, kind: str, repo
     return system, user
 
 
+class InvalidLLMResponse(ValueError):
+    """A response diagnostic that never contains provider or artifact content."""
+
+
+def decode_verdict(raw: bytes) -> dict:
+    if not raw.strip():
+        raise InvalidLLMResponse("Empty response body")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise InvalidLLMResponse("Response body is not valid UTF-8 JSON") from None
+    try:
+        content = payload["choices"][0]["message"]["content"]
+        if not isinstance(content, str):
+            raise TypeError
+        verdict = json.loads(content)
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError):
+        raise InvalidLLMResponse("Missing or invalid JSON completion") from None
+    if (
+        not isinstance(verdict, dict)
+        or type(verdict.get("pass")) is not bool
+        or verdict.get("severity") not in ("ok", "warn", "fail")
+        or not isinstance(verdict.get("summary"), str)
+        or not verdict["summary"].strip()
+        or not isinstance(verdict.get("findings"), list)
+    ):
+        raise InvalidLLMResponse("Completion does not match the verdict schema")
+    severity = verdict["severity"]
+    if verdict["pass"] != (severity != "fail"):
+        raise InvalidLLMResponse("Inconsistent pass and severity in verdict")
+    for finding in verdict["findings"]:
+        if (
+            not isinstance(finding, dict)
+            or not isinstance(finding.get("rule"), str)
+            or not finding["rule"].strip()
+            or finding.get("severity") not in ("ok", "warn", "fail")
+            or not isinstance(finding.get("message"), str)
+            or not finding["message"].strip()
+            or (finding.get("remediation") is not None and not isinstance(finding["remediation"], str))
+        ):
+            raise InvalidLLMResponse("Invalid finding in verdict")
+        if (finding["severity"] == "fail" and severity != "fail") or (
+            finding["severity"] == "warn" and severity == "ok"
+        ):
+            raise InvalidLLMResponse("Finding severity exceeds overall verdict")
+    return {key: verdict[key] for key in ("pass", "severity", "summary", "findings")}
+
+
 def call_llm(token: str, system: str, user: str, model: str) -> dict:
     body = json.dumps({
         "model": model,
@@ -257,31 +309,44 @@ def call_llm(token: str, system: str, user: str, model: str) -> dict:
         "X-GitHub-Api-Version": "2026-03-10",
     }
     req = urllib.request.Request(ENDPOINT, data=body, headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            payload = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as exc:
-        return {
-            "pass": False,
+    for attempt in range(1, LLM_ATTEMPTS + 1):
+        retryable = True
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                return decode_verdict(resp.read())
+        except urllib.error.HTTPError as exc:
+            reason = f"LLM endpoint returned HTTP {exc.code}"
+            retryable = exc.code in RETRYABLE_HTTP
+            exc.close()
+        except InvalidLLMResponse as exc:
+            reason = str(exc)  # Only the fixed diagnostics above, never response content.
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead):
+            reason = "LLM endpoint connection failed or timed out"
+        if not retryable or attempt == LLM_ATTEMPTS:
+            break
+        time.sleep(attempt)
+    return {
+        "status": "unavailable",
+        "pass": None,
+        "severity": "warn",
+        "summary": "Qualitative format review unavailable; no format verdict issued.",
+        "findings": [{
+            "rule": "infra:llm-unavailable",
             "severity": "warn",
-            "summary": f"LLM endpoint returned HTTP {exc.code}; skipping check.",
-            "findings": [{
-                "rule": "infra:llm-error",
-                "severity": "warn",
-                "message": exc.read().decode("utf-8", errors="replace")[:300],
-                "remediation": None,
-            }],
-        }
-    content = payload["choices"][0]["message"]["content"]
-    return json.loads(content)
+            "message": f"{reason} after {attempt} attempt(s). Provider response content omitted.",
+            "remediation": "Check provider availability, model access and workflow permissions, then rerun the check.",
+        }],
+    }
 
 
 def render_comment(verdict: dict, model: str) -> str:
     sev = verdict.get("severity", "warn")
     icon = {"ok": "✅", "warn": "⚠️", "fail": "❌"}.get(sev, "❔")
+    unavailable = verdict.get("status") == "unavailable"
+    label = "UNAVAILABLE" if unavailable else sev.upper()
     lines = [
         COMMENT_MARKER,
-        f"## {icon} Crystal format check — {sev.upper()}",
+        f"## {icon} Crystal format check — {label}",
         "",
         f"**{verdict.get('summary', '(no summary)')}**",
         "",
@@ -298,7 +363,10 @@ def render_comment(verdict: dict, model: str) -> str:
             if rem:
                 lines.append(f"  - _Remediation:_ {rem}")
         lines.append("")
-    lines.append(f"_Validated against [Crystal governance](https://github.com/Malakof/.github) using `{model}` via GitHub Models._")
+    if unavailable:
+        lines.append(f"_Qualitative review unavailable using `{model}` via GitHub Models. No validation against [Crystal governance](https://github.com/Malakof/.github) is claimed._")
+    else:
+        lines.append(f"_Validated against [Crystal governance](https://github.com/Malakof/.github) using `{model}` via GitHub Models._")
     return "\n".join(lines)
 
 
@@ -365,6 +433,10 @@ def main() -> int:
     if not args.no_comment:
         upsert_comment(args.repo, number, kind, body)
 
+    if verdict.get("status") == "unavailable":
+        level = "error" if blocking else "warning"
+        print(f"::{level}::Format check UNAVAILABLE on {kind} #{number}; no format verdict issued (blocking={str(blocking).lower()}).")
+        return 1 if blocking else 0
     sev = verdict.get("severity", "warn")
     if sev == "fail" and blocking:
         print(f"::error::Format check FAILED on {kind} #{number} (blocking=true).")

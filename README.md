@@ -63,6 +63,20 @@ Add to the target repo:
    python scripts/sync-labels.py --repo <owner>/<name>
    ```
 
+## Format-check availability
+
+The qualitative format check makes at most three attempts for transient HTTP,
+connection or invalid-response failures. It reports `UNAVAILABLE` when no valid
+verdict can be obtained; this is never reported as a successful validation.
+Provider error bodies, tokens and request content are omitted from infrastructure
+diagnostics. With `blocking: false`, unavailability produces an explicit warning;
+with `blocking: true`, it fails the job. A valid format rejection retains the
+existing blocking policy. The caller repository is checked out before its
+governance pin is resolved.
+
+Run the regression suite with `python3 -m unittest discover -s tests -v` after
+installing `PyYAML>=6.0`.
+
 ## Release workflow
 
 On every semver tag `vX.Y.Z` pushed on `main`:
